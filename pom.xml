@@ -37,12 +37,12 @@
       <version>9.4</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
+    <!-- <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-util</artifactId>
       <version>9.4</version>
       <scope>compile</scope>
-    </dependency>
+    </dependency> -->
   </dependencies>
 
   <build>
