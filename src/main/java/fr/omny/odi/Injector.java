@@ -4,16 +4,28 @@ package fr.omny.odi;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 public class Injector {
 
 	private static Injector instance;
+	private static Optional<Logger> logger;
+
+	public static Optional<Logger> getLogger(){
+		return logger;
+	}
 
 	public static void startApplication(Class<?> mainClass) {
+		startApplication(mainClass, null);
+	}
+
+	public static void startApplication(Class<?> mainClass, Logger logger) {
 		try {
 			synchronized (Injector.class) {
 				if (instance == null) {
 					instance = new Injector();
+					Injector.logger = Optional.ofNullable(logger);
 					instance.add(mainClass);
 				}
 			}

@@ -4,6 +4,7 @@ package fr.omny.odi;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.security.CodeSource;
@@ -62,13 +63,14 @@ public class Utils {
 			classesInPackage.computeIfAbsent(parentPackage, k -> new ArrayList<>());
 			classesInPackage.get(parentPackage).add(classPath);
 		}
+		var start = BigDecimal.valueOf(System.nanoTime());
+
 		for (String folder : classesInPackage.keySet()) {
 			for (String classPath : classesInPackage.get(folder)) {
 				var klass = Reflections.readPreClass(classPath);
-				if(klass != PreClass.NONE){
-					if(filter.test(klass)){
+				if (klass != PreClass.NONE) {
+					if (filter.test(klass)) {
 						try {
-							System.out.println("Class "+klass.getClassName()+" is service");
 							filteredClasses.add(Reflections.readClass(classPath.replace("/", ".")));
 						} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
 								| InvocationTargetException e) {
@@ -78,6 +80,11 @@ public class Utils {
 				}
 			}
 		}
+
+		var end = BigDecimal.valueOf(System.nanoTime());
+
+		Injector.getLogger().ifPresent(
+				log -> log.info("Analyzed " + classes.size() + " class files in " + (end.subtract(start).doubleValue() / 1_000_000) + "ms"));
 
 		return filteredClasses.stream().map(Utils::forceInit).collect(Collectors.toList());
 	}
