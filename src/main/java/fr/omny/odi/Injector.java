@@ -43,6 +43,15 @@ public class Injector {
 		Utils.autowireNoException(object);
 	}
 
+	/**
+	 * 
+	 * @param klass
+	 * @param object
+	 */
+	public static void addSpecial(Class<?> klass, Object object){
+		instance.singletons.put(klass, object);
+	}
+
 	public static <T> T getService(Class<T> klass) {
 		try {
 			return instance.getServiceInstance(klass);
