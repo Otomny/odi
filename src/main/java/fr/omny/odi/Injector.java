@@ -26,7 +26,7 @@ public class Injector {
 				if (instance == null) {
 					instance = new Injector();
 					Injector.logger = Optional.ofNullable(logger);
-					instance.add(mainClass);
+					instance.add(mainClass.getPackageName());
 				}
 			}
 		} catch (Exception e) {
@@ -52,9 +52,21 @@ public class Injector {
 		return null;
 	}
 
+	/**
+	 * 
+	 * @param mainClass
+	 */
 	public static void addFrom(Class<?> mainClass) {
+		addFrom(mainClass.getPackageName());
+	}
+
+	/**
+	 * 
+	 * @param packageName
+	 */
+	public static void addFrom(String packageName) {
 		if (instance != null) {
-			instance.add(mainClass);
+			instance.add(packageName);
 		}
 	}
 
@@ -67,8 +79,8 @@ public class Injector {
 		singletons = new HashMap<>();
 	}
 
-	public void add(Class<?> mainClass) {
-		var classes = Utils.getClasses(mainClass.getPackageName(), klass -> klass.isAnnotationPresent(Component.class));
+	public void add(String packageName) {
+		var classes = Utils.getClasses(packageName, klass -> klass.isAnnotationPresent(Component.class));
 		for (Class<?> implementationClass : classes) {
 			try {
 				Object serviceInstance = implementationClass.getConstructor().newInstance();

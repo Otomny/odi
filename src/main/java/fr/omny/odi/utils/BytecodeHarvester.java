@@ -11,12 +11,14 @@ import org.objectweb.asm.Opcodes;
 import lombok.Getter;
 
 @Getter
-public class AnnotationHarvester extends ClassVisitor {
+public class BytecodeHarvester extends ClassVisitor {
 
+	private String superClass;
 	private String className;
 	private List<String> annotations = new ArrayList<>();
+	private List<String> interfaces = new ArrayList<>();
 
-	protected AnnotationHarvester(String className) {
+	protected BytecodeHarvester(String className) {
 		super(Opcodes.ASM8);
 		this.className = className;
 	}
@@ -27,6 +29,15 @@ public class AnnotationHarvester extends ClassVisitor {
 		String b = a.substring(0, a.length() - 1);
 		this.annotations.add(b);
 		return super.visitAnnotation(descriptor, visible);
+	}
+
+	@Override
+	public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+		super.visit(version, access, name, signature, superName, interfaces);
+		this.superClass = superName;
+		for (String anInterface : interfaces) {
+			this.interfaces.add(anInterface);
+		}
 	}
 
 }

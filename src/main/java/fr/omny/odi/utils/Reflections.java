@@ -33,6 +33,7 @@ public class Reflections {
 
 	/**
 	 * Read bytecode class declaration without loading dependencies, without loading code and all
+	 * 
 	 * @param path
 	 * @return a PreClass state
 	 */
@@ -40,9 +41,12 @@ public class Reflections {
 		var classLoader = Reflections.class.getClassLoader();
 		try (var inputStream = classLoader.getResourceAsStream(path)) {
 			ClassReader cr = new ClassReader(inputStream.readAllBytes());
-			String className = path.substring(path.lastIndexOf("/")+1, path.indexOf(".class"));
-			var harvester = new AnnotationHarvester(className);
-			cr.accept(harvester, ClassReader.SKIP_FRAMES & ClassReader.SKIP_DEBUG);
+			String className = path.substring(path.lastIndexOf("/") + 1, path.indexOf(".class"));
+			var harvester = new BytecodeHarvester(className);
+			// Reading information about the class (Methods, Annotations, Super class extends, etc...)
+			// doesn't require to read any of the code content
+			// it's only about the ConstantPool
+			cr.accept(harvester, ClassReader.SKIP_FRAMES & ClassReader.SKIP_DEBUG & ClassReader.SKIP_CODE);
 			return new PreClass(harvester);
 		} catch (Exception e) {
 			e.printStackTrace();
