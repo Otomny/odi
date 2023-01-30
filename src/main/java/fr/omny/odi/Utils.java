@@ -23,6 +23,9 @@ import fr.omny.odi.utils.Reflections;
 
 public class Utils {
 
+	private static Map<String, List<String>> knownPathes = new HashMap<>();
+	private static Map<String, PreClass> knownPreclassses = new HashMap<>();
+
 	public static void addDefaultConstructorIfNotExists(Class<?> klass) {
 
 	}
@@ -32,6 +35,9 @@ public class Utils {
 	}
 
 	public static List<Class<?>> getClasses(String packageName, Predicate<PreClass> filter) {
+		if (knownPathes.containsKey(packageName)) {
+			return getClasses(knownPathes.get(packageName), filter);
+		}
 		String packageRelPath = packageName.replace('.', '/');
 		CodeSource src = Utils.class.getProtectionDomain().getCodeSource();
 		List<String> classes = new ArrayList<>();
@@ -53,7 +59,19 @@ public class Utils {
 				e.printStackTrace();
 			}
 		}
+		knownPathes.put(packageName, classes);
+		return getClasses(classes, filter);
+	}
 
+	/**
+	 * Scan classes using ASM to read ConstantPool and other things without loading the class in the JVM (less memory
+	 * overhead)
+	 * 
+	 * @param classes
+	 * @param filter
+	 * @return
+	 */
+	public static List<Class<?>> getClasses(List<String> classes, Predicate<PreClass> filter) {
 		Map<String, List<String>> classesInPackage = new HashMap<>();
 		List<Class<?>> filteredClasses = new ArrayList<>();
 
@@ -67,9 +85,9 @@ public class Utils {
 
 		for (String folder : classesInPackage.keySet()) {
 			for (String classPath : classesInPackage.get(folder)) {
-				var klass = Reflections.readPreClass(classPath);
-				if (klass != PreClass.NONE) {
-					if (filter.test(klass)) {
+				var preClass = knownPreclassses.getOrDefault(classPath, Reflections.readPreClass(classPath));
+				if (preClass != PreClass.NONE) {
+					if (filter.test(preClass)) {
 						try {
 							filteredClasses.add(Reflections.readClass(classPath.replace("/", ".")));
 						} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
@@ -77,14 +95,16 @@ public class Utils {
 							e.printStackTrace();
 						}
 					}
+					knownPreclassses.putIfAbsent(classPath, preClass);
 				}
+
 			}
 		}
 
 		var end = BigDecimal.valueOf(System.nanoTime());
 
-		Injector.getLogger().ifPresent(
-				log -> log.info("Analyzed " + classes.size() + " class files in " + (end.subtract(start).doubleValue() / 1_000_000) + "ms"));
+		Injector.getLogger().ifPresent(log -> log.info(
+				"Analyzed " + classes.size() + " class files in " + (end.subtract(start).doubleValue() / 1_000_000) + "ms"));
 
 		return filteredClasses.stream().map(Utils::forceInit).collect(Collectors.toList());
 	}

@@ -11,12 +11,14 @@ public class PreClass {
 
 	public static final PreClass NONE = null;
 
+	private String packageName;
 	private String className;
 	private String superClass;
 	private List<String> annotations = new ArrayList<>();
 	private List<String> interfaces = new ArrayList<>();
 
-	public PreClass(BytecodeHarvester harvester) {
+	public PreClass(String packageName, BytecodeHarvester harvester) {
+		this.packageName = packageName;
 		this.className = harvester.getClassName();
 		this.annotations = harvester.getAnnotations();
 		this.interfaces = harvester.getInterfaces();

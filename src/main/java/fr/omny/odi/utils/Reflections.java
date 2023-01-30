@@ -42,12 +42,14 @@ public class Reflections {
 		try (var inputStream = classLoader.getResourceAsStream(path)) {
 			ClassReader cr = new ClassReader(inputStream.readAllBytes());
 			String className = path.substring(path.lastIndexOf("/") + 1, path.indexOf(".class"));
+			String packageName = path.substring(0, path.lastIndexOf("/") - 1)
+				.replaceAll("/", ".");
 			var harvester = new BytecodeHarvester(className);
 			// Reading information about the class (Methods, Annotations, Super class extends, etc...)
 			// doesn't require to read any of the code content
 			// it's only about the ConstantPool
 			cr.accept(harvester, ClassReader.SKIP_FRAMES & ClassReader.SKIP_DEBUG & ClassReader.SKIP_CODE);
-			return new PreClass(harvester);
+			return new PreClass(packageName, harvester);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return PreClass.NONE;
