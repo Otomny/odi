@@ -2,7 +2,9 @@ package fr.omny.odi.utils;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import lombok.Getter;
 
@@ -14,15 +16,15 @@ public class PreClass {
 	private String packageName;
 	private String className;
 	private String superClass;
-	private List<String> annotations = new ArrayList<>();
+	private Map<String, Map<String, String>> annotations = new HashMap<>();
 	private List<String> interfaces = new ArrayList<>();
 
 	public PreClass(String packageName, BytecodeHarvester harvester) {
 		this.packageName = packageName;
 		this.className = harvester.getClassName();
-		this.annotations = harvester.getAnnotations();
 		this.interfaces = harvester.getInterfaces();
 		this.superClass = harvester.getSuperClass();
+		this.annotations = harvester.getAnnotationsDatas();
 	}
 
 	/**
@@ -34,7 +36,7 @@ public class PreClass {
 	public boolean isAnnotationPresent(Class<?> annotation) {
 		if (annotation == null)
 			return false;
-		return this.annotations.contains(annotation.getCanonicalName().replace(".", "/"));
+		return this.annotations.containsKey(annotation.getCanonicalName().replace(".", "/"));
 	}
 
 	/**
