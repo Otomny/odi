@@ -5,7 +5,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 public class Injector {
 
@@ -77,6 +79,18 @@ public class Injector {
 		if (instance != null) {
 			instance.add(packageName);
 		}
+	}
+
+	/**
+	 * Find each that correspond to validate the predicate
+	 * @param o
+	 * @return
+	 */
+	public static Stream<Object> findEach(Predicate<Object> o){
+		return instance.singletons
+			.values()
+			.stream()
+			.filter(o);
 	}
 
 	/**
