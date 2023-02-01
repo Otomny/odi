@@ -32,12 +32,39 @@ public class Utils {
 
 	}
 
-	public static Object callMethod(String methodName, Object instance) {
-		throw new UnsupportedOperationException("call Method with methodName not implemented");
+/**
+	 * @param methodName
+	 * @param instance
+	 * @return
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
+	public static Object callMethod(String methodName, Object instance)
+			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return callMethod(methodName, instance, new Object[]{});
 	}
 
 	/**
-	 * 
+	 * @param methodName
+	 * @param instance
+	 * @return
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
+	public static Object callMethod(String methodName, Object instance, Object[] parameters)
+			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		var classInstance = instance.getClass();
+		for (var method : classInstance.getDeclaredMethods()) {
+			if (method.getName().equalsIgnoreCase(methodName)) {
+				return callMethod(method, classInstance, instance, parameters);
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * @param method
 	 * @param classInstance
 	 * @param instance
@@ -65,14 +92,17 @@ public class Utils {
 			if (targetParam.isAnnotationPresent(Autowired.class)) {
 				var autowireObj = Injector.getService(targetParam.getClass());
 				finalParameters[i] = autowireObj;
-			}else{
+			} else {
 				var inputObj = getInputParameter.apply(targetParam.getClass());
-				if(inputObj != null){
+				if (inputObj != null) {
 					finalParameters[i] = inputObj;
 				}
 			}
 		}
-		return method.invoke(instance, finalParameters);
+		method.setAccessible(true);
+		var returnObj = method.invoke(instance, finalParameters);
+		method.setAccessible(false);
+		return returnObj;
 	}
 
 	public static List<Class<?>> getClasses(String packageName) {
