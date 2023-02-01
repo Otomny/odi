@@ -2,6 +2,8 @@ package fr.omny.odi.utils;
 
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import org.objectweb.asm.ClassReader;
 
@@ -54,6 +56,24 @@ public class Reflections {
 			e.printStackTrace();
 			return PreClass.NONE;
 		}
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static String[] findTypeName(Type[] typeParameters, Class<?> iGenericClass){
+		for(var type : typeParameters){
+			var ptype = (ParameterizedType) type;
+			if(ptype.getRawType().getTypeName().equalsIgnoreCase(iGenericClass.getSimpleName())){
+				String[] s = new String[ptype.getActualTypeArguments().length];
+				for (int i = 0; i < ptype.getActualTypeArguments().length; i++) {
+					s[i] = ptype.getActualTypeArguments()[i].getTypeName();
+				}
+				return s;
+			}
+		}
+		return null;
 	}
 
 }

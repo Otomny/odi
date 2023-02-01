@@ -2,6 +2,7 @@ package fr.omny.odi;
 
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -107,10 +108,34 @@ public class Injector {
 		for (Class<?> implementationClass : classes) {
 			try {
 				Object serviceInstance = implementationClass.getConstructor().newInstance();
+				addMethodReturns(implementationClass, serviceInstance);
 				this.singletons.put(implementationClass, serviceInstance);
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 					| NoSuchMethodException | SecurityException e) {
 				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * 
+	 * @param implementationClass
+	 * @param serviceInstance
+	 */
+	public void addMethodReturns(Class<?> implementationClass, Object serviceInstance) {
+		for(Method method : implementationClass.getDeclaredMethods()){
+			if(method.isAnnotationPresent(Component.class)){
+				method.setAccessible(true);
+				// Inject autowired arguments
+				try {
+					Class<?> returnType = method.getReturnType();
+					if(returnType != void.class){
+						Object service = method.invoke(serviceInstance, new Object[]{});
+						this.singletons.put(returnType, service);
+					}
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}

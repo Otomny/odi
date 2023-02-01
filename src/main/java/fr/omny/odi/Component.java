@@ -7,9 +7,11 @@ import java.lang.annotation.Target;
 
 /**
  * Provider should use this annotation on class declaration
+ * 
+ * For this annotation to be use on a method returns, the class should have also this annotation
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Component {
 	
 }

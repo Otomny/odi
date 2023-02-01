@@ -4,6 +4,7 @@ package fr.omny.odi;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -28,6 +30,49 @@ public class Utils {
 
 	public static void addDefaultConstructorIfNotExists(Class<?> klass) {
 
+	}
+
+	public static Object callMethod(String methodName, Object instance) {
+		throw new UnsupportedOperationException("call Method with methodName not implemented");
+	}
+
+	/**
+	 * 
+	 * @param method
+	 * @param classInstance
+	 * @param instance
+	 * @param parameters
+	 * @return
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws InvocationTargetException
+	 */
+	public static Object callMethod(Method method, Class<?> classInstance, Object instance, Object[] parameters)
+			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		var targetParameters = method.getParameters();
+		Object[] finalParameters = new Object[targetParameters.length];
+
+		Function<Class<?>, Object> getInputParameter = klass -> {
+			for (var obj : parameters) {
+				if (klass.isAssignableFrom(obj.getClass()))
+					return obj;
+			}
+			return null;
+		};
+
+		for (int i = 0; i < finalParameters.length; i++) {
+			var targetParam = targetParameters[i];
+			if (targetParam.isAnnotationPresent(Autowired.class)) {
+				var autowireObj = Injector.getService(targetParam.getClass());
+				finalParameters[i] = autowireObj;
+			}else{
+				var inputObj = getInputParameter.apply(targetParam.getClass());
+				if(inputObj != null){
+					finalParameters[i] = inputObj;
+				}
+			}
+		}
+		return method.invoke(instance, finalParameters);
 	}
 
 	public static List<Class<?>> getClasses(String packageName) {
