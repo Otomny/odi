@@ -44,8 +44,7 @@ public class Reflections {
 		try (var inputStream = classLoader.getResourceAsStream(path)) {
 			ClassReader cr = new ClassReader(inputStream.readAllBytes());
 			String className = path.substring(path.lastIndexOf("/") + 1, path.indexOf(".class"));
-			String packageName = path.substring(0, path.lastIndexOf("/") - 1)
-				.replaceAll("/", ".");
+			String packageName = path.substring(0, path.lastIndexOf("/") - 1).replaceAll("/", ".");
 			var harvester = new BytecodeHarvester(className);
 			// Reading information about the class (Methods, Annotations, Super class extends, etc...)
 			// doesn't require to read any of the code content
@@ -59,13 +58,12 @@ public class Reflections {
 	}
 
 	/**
-	 * 
 	 * @return
 	 */
-	public static String[] findTypeName(Type[] typeParameters, Class<?> iGenericClass){
-		for(var type : typeParameters){
+	public static String[] findTypeName(Type[] typeParameters, Class<?> iGenericClass) {
+		for (var type : typeParameters) {
 			var ptype = (ParameterizedType) type;
-			if(ptype.getRawType().getTypeName().equalsIgnoreCase(iGenericClass.getSimpleName())){
+			if (ptype.getRawType().getTypeName().equalsIgnoreCase(iGenericClass.getCanonicalName())) {
 				String[] s = new String[ptype.getActualTypeArguments().length];
 				for (int i = 0; i < ptype.getActualTypeArguments().length; i++) {
 					s[i] = ptype.getActualTypeArguments()[i].getTypeName();

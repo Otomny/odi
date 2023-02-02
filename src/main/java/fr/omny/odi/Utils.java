@@ -12,14 +12,17 @@ import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import fr.omny.odi.listener.OnConstructorCallListener;
 import fr.omny.odi.utils.PreClass;
 import fr.omny.odi.utils.Predicates;
 import fr.omny.odi.utils.Reflections;
@@ -28,6 +31,15 @@ public class Utils {
 
 	private static Map<String, List<String>> knownPathes = new HashMap<>();
 	private static Map<String, PreClass> knownPreclassses = new HashMap<>();
+	private static Set<OnConstructorCallListener> constructorCallListeners = new HashSet<>();
+
+	/**
+	 * 
+	 * @param listener
+	 */
+	public static void registerCallConstructor(OnConstructorCallListener listener){
+		constructorCallListeners.add(listener);
+	}
 
 	/**
 	 * @param <T>
@@ -101,6 +113,7 @@ public class Utils {
 		constructor.setAccessible(true);
 		@SuppressWarnings("unchecked")
 		T returnObj = (T) constructor.newInstance(finalParameters);
+		Utils.constructorCallListeners.forEach(listener -> listener.newInstance(returnObj));
 		constructor.setAccessible(false);
 		return returnObj;
 	}

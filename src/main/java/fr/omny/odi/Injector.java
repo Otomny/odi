@@ -87,16 +87,21 @@ public class Injector {
 	 * @param object
 	 */
 	public static void addService(Class<?> klass, Object object) {
+		if (instance.singletons.containsKey(klass))
+			return;
 		instance.singletons.put(klass, object);
 	}
 
 	/**
 	 * Call a service constructor with the desired parameters and add them to services
+	 * 
 	 * @param klass
 	 * @param parameters
 	 */
 	public static void addServiceParams(Class<?> klass, Object... parameters) {
 		try {
+			if (instance.singletons.containsKey(klass))
+				return;
 			instance.singletons.put(klass, Utils.callConstructor(klass, parameters));
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
@@ -151,11 +156,13 @@ public class Injector {
 		var classes = Utils.getClasses(packageName, klass -> klass.isAnnotationPresent(Component.class));
 		for (Class<?> implementationClass : classes) {
 			try {
-				Object serviceInstance = implementationClass.getConstructor().newInstance();
+				if (this.singletons.containsKey(implementationClass))
+					continue;
+				Object serviceInstance = Utils.callConstructor(implementationClass);
 				addMethodReturns(implementationClass, serviceInstance);
 				this.singletons.put(implementationClass, serviceInstance);
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-					| NoSuchMethodException | SecurityException e) {
+					| SecurityException e) {
 				e.printStackTrace();
 			}
 		}
@@ -173,7 +180,9 @@ public class Injector {
 				try {
 					Class<?> returnType = method.getReturnType();
 					if (returnType != void.class) {
-						Object service = method.invoke(serviceInstance, new Object[] {});
+						if (this.singletons.containsKey(returnType))
+							continue;
+						Object service = Utils.callMethod(method, implementationClass, serviceInstance, new Object[] {});
 						this.singletons.put(returnType, service);
 					}
 				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
