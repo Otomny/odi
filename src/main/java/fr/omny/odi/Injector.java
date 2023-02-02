@@ -4,16 +4,25 @@ package fr.omny.odi;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import fr.omny.odi.listener.OnPreWireListener;
 
 public class Injector {
 
 	private static Injector instance;
 	private static Optional<Logger> logger;
+	protected static Set<OnPreWireListener> preWireListeners = new HashSet<>();
+
+	public static void registerWireListener(OnPreWireListener onWireListener) {
+		preWireListeners.add(onWireListener);
+	}
 
 	public static Optional<Logger> getLogger() {
 		return logger;

@@ -30,7 +30,6 @@ public class Utils {
 	private static Map<String, PreClass> knownPreclassses = new HashMap<>();
 
 	/**
-	 * 
 	 * @param <T>
 	 * @param instanceClass
 	 * @return
@@ -39,8 +38,9 @@ public class Utils {
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	public static <T> T callConstructor(Class<? extends T> instanceClass) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
-		return callConstructor(instanceClass, new Object[]{});
+	public static <T> T callConstructor(Class<? extends T> instanceClass)
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return callConstructor(instanceClass, new Object[] {});
 	}
 
 	/**
@@ -278,12 +278,14 @@ public class Utils {
 	 * 
 	 * @param instance
 	 */
-	public static void autowireNoException(Object instance) {
+	public static <T> T autowireNoException(T instance) {
 		try {
 			autowire(instance);
+			return instance;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return instance;
 	}
 
 	/**
@@ -295,6 +297,7 @@ public class Utils {
 	 */
 	public static void autowire(Object instance) throws InstantiationException, IllegalAccessException {
 		Class<?> klass = instance.getClass();
+		Injector.preWireListeners.forEach(listener -> listener.wire(instance));
 		for (Field field : klass.getDeclaredFields()) {
 			if (field.isAnnotationPresent(Autowired.class)) {
 				field.setAccessible(true);
