@@ -11,14 +11,18 @@ public class MethodInjectionTest {
 
 	@Test
 	public void callMethod_NoArgumentPassed() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		boolean result = (boolean) Utils.callMethod("testMethod1", this, new Object[] {});
+		boolean result = (boolean) Utils.callMethod("testMethod1", this);
 		assertTrue(!result);
 	}
 
 	@Test
 	public void callMethod_ArgumentPassed() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		boolean result = (boolean) Utils.callMethod("testMethod1", this, new Object[] {new Dummy1("")});
+		boolean result = (boolean) Utils.callMethod("testMethod1", this, new Dummy1(""));
 		assertTrue(result);
+	}
+
+	public boolean testMethod1(Dummy1 dum) {
+		return dum != null;
 	}
 
 	@Test
@@ -26,15 +30,11 @@ public class MethodInjectionTest {
 		Injector.startTest();
 		Injector.addService(DummyService.class, new DummyService("Hello world"));
 		
-		String result = (String) Utils.callMethod("testMethod2", this, new Object[]{new Dummy1("")});
+		String result = (String) Utils.callMethod("testMethod2", this, new Dummy1(""));
 
 		assertEquals("Hello world", result);
 
 		Injector.wipeTest();
-	}
-
-	public boolean testMethod1(Dummy1 dum) {
-		return dum != null;
 	}
 
 	public String testMethod2(Dummy1 dum, @Autowired DummyService serv){

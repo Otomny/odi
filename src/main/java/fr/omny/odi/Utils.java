@@ -2,6 +2,7 @@ package fr.omny.odi;
 
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,21 +29,80 @@ public class Utils {
 	private static Map<String, List<String>> knownPathes = new HashMap<>();
 	private static Map<String, PreClass> knownPreclassses = new HashMap<>();
 
-	public static void addDefaultConstructorIfNotExists(Class<?> klass) {
-
-	}
-
-/**
-	 * @param methodName
-	 * @param instance
+	/**
+	 * 
+	 * @param <T>
+	 * @param instanceClass
 	 * @return
 	 * @throws InvocationTargetException
 	 * @throws IllegalArgumentException
 	 * @throws IllegalAccessException
+	 * @throws InstantiationException
 	 */
-	public static Object callMethod(String methodName, Object instance)
-			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		return callMethod(methodName, instance, new Object[]{});
+	public static <T> T callConstructor(Class<? extends T> instanceClass) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
+		return callConstructor(instanceClass, new Object[]{});
+	}
+
+	/**
+	 * @param instanceClass
+	 * @return
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws InvocationTargetException
+	 */
+	public static <T> T callConstructor(Class<? extends T> instanceClass, Object... parameters)
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		int constructorCount = instanceClass.getConstructors().length;
+		for (Constructor<?> constructor : instanceClass.getConstructors()) {
+			// if multiple constructor, don't take the default one (The one without any parameters)
+			if (constructorCount == 1 || constructor.getParameters().length > 0) {
+				return callConstructor(constructor, instanceClass, parameters);
+			}
+		}
+		return null;
+	}
+
+	/***
+	 * @param constructor
+	 * @param instanceClass
+	 * @param parameters
+	 * @return
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws InvocationTargetException
+	 */
+	public static <T> T callConstructor(Constructor<?> constructor, Class<?> instanceClass, Object[] parameters)
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		var targetParameters = constructor.getParameters();
+		Object[] finalParameters = new Object[targetParameters.length];
+
+		Function<Class<?>, Object> getInputParameter = klass -> {
+			for (var obj : parameters) {
+				if (klass.isAssignableFrom(obj.getClass()))
+					return obj;
+			}
+			return null;
+		};
+
+		for (int i = 0; i < finalParameters.length; i++) {
+			var targetParam = targetParameters[i];
+			if (targetParam.isAnnotationPresent(Autowired.class)) {
+				var autowireObj = Injector.getService(targetParam.getType());
+				finalParameters[i] = autowireObj;
+			} else {
+				var inputObj = getInputParameter.apply(targetParam.getType());
+				if (inputObj != null) {
+					finalParameters[i] = inputObj;
+				}
+			}
+		}
+		constructor.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		T returnObj = (T) constructor.newInstance(finalParameters);
+		constructor.setAccessible(false);
+		return returnObj;
 	}
 
 	/**
@@ -53,7 +113,20 @@ public class Utils {
 	 * @throws IllegalArgumentException
 	 * @throws IllegalAccessException
 	 */
-	public static Object callMethod(String methodName, Object instance, Object[] parameters)
+	public static Object callMethod(String methodName, Object instance)
+			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return callMethod(methodName, instance, new Object[] {});
+	}
+
+	/**
+	 * @param methodName
+	 * @param instance
+	 * @return
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
+	public static Object callMethod(String methodName, Object instance, Object... parameters)
 			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		var classInstance = instance.getClass();
 		for (var method : classInstance.getDeclaredMethods()) {

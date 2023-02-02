@@ -52,7 +52,7 @@ public class Injector {
 		}
 	}
 
-	public static void wipeTest(){
+	public static void wipeTest() {
 		try {
 			synchronized (Injector.class) {
 				if (instance != null) {
@@ -79,6 +79,19 @@ public class Injector {
 	 */
 	public static void addService(Class<?> klass, Object object) {
 		instance.singletons.put(klass, object);
+	}
+
+	/**
+	 * Call a service constructor with the desired parameters and add them to services
+	 * @param klass
+	 * @param parameters
+	 */
+	public static void addServiceParams(Class<?> klass, Object... parameters) {
+		try {
+			instance.singletons.put(klass, Utils.callConstructor(klass, parameters));
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public static <T> T getService(Class<T> klass) {
