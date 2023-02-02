@@ -90,10 +90,10 @@ public class Utils {
 		for (int i = 0; i < finalParameters.length; i++) {
 			var targetParam = targetParameters[i];
 			if (targetParam.isAnnotationPresent(Autowired.class)) {
-				var autowireObj = Injector.getService(targetParam.getClass());
+				var autowireObj = Injector.getService(targetParam.getType());
 				finalParameters[i] = autowireObj;
 			} else {
-				var inputObj = getInputParameter.apply(targetParam.getClass());
+				var inputObj = getInputParameter.apply(targetParam.getType());
 				if (inputObj != null) {
 					finalParameters[i] = inputObj;
 				}

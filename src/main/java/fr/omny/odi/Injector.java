@@ -15,7 +15,7 @@ public class Injector {
 	private static Injector instance;
 	private static Optional<Logger> logger;
 
-	public static Optional<Logger> getLogger(){
+	public static Optional<Logger> getLogger() {
 		return logger;
 	}
 
@@ -38,6 +38,33 @@ public class Injector {
 	}
 
 	/**
+	 * Method for Injector test
+	 */
+	public static void startTest() {
+		try {
+			synchronized (Injector.class) {
+				if (instance == null) {
+					instance = new Injector();
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void wipeTest(){
+		try {
+			synchronized (Injector.class) {
+				if (instance != null) {
+					instance = null;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Perform autowiring
 	 * 
 	 * @param object
@@ -47,11 +74,10 @@ public class Injector {
 	}
 
 	/**
-	 * 
 	 * @param klass
 	 * @param object
 	 */
-	public static void addSpecial(Class<?> klass, Object object){
+	public static void addService(Class<?> klass, Object object) {
 		instance.singletons.put(klass, object);
 	}
 
@@ -65,7 +91,6 @@ public class Injector {
 	}
 
 	/**
-	 * 
 	 * @param mainClass
 	 */
 	public static void addFrom(Class<?> mainClass) {
@@ -73,7 +98,6 @@ public class Injector {
 	}
 
 	/**
-	 * 
 	 * @param packageName
 	 */
 	public static void addFrom(String packageName) {
@@ -84,14 +108,12 @@ public class Injector {
 
 	/**
 	 * Find each that correspond to validate the predicate
+	 * 
 	 * @param o
 	 * @return
 	 */
-	public static Stream<Object> findEach(Predicate<Object> o){
-		return instance.singletons
-			.values()
-			.stream()
-			.filter(o);
+	public static Stream<Object> findEach(Predicate<Object> o) {
+		return instance.singletons.values().stream().filter(o);
 	}
 
 	/**
@@ -118,19 +140,18 @@ public class Injector {
 	}
 
 	/**
-	 * 
 	 * @param implementationClass
 	 * @param serviceInstance
 	 */
 	public void addMethodReturns(Class<?> implementationClass, Object serviceInstance) {
-		for(Method method : implementationClass.getDeclaredMethods()){
-			if(method.isAnnotationPresent(Component.class)){
+		for (Method method : implementationClass.getDeclaredMethods()) {
+			if (method.isAnnotationPresent(Component.class)) {
 				method.setAccessible(true);
 				// Inject autowired arguments
 				try {
 					Class<?> returnType = method.getReturnType();
-					if(returnType != void.class){
-						Object service = method.invoke(serviceInstance, new Object[]{});
+					if (returnType != void.class) {
+						Object service = method.invoke(serviceInstance, new Object[] {});
 						this.singletons.put(returnType, service);
 					}
 				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {

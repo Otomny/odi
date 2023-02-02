@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Classes that uses services should use this annotation
  */
-@Target({METHOD, CONSTRUCTOR, FIELD})
+@Target({METHOD, CONSTRUCTOR, FIELD, PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Autowired {
