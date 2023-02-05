@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -34,10 +35,9 @@ public class Utils {
 	private static Set<OnConstructorCallListener> constructorCallListeners = new HashSet<>();
 
 	/**
-	 * 
 	 * @param listener
 	 */
-	public static void registerCallConstructor(OnConstructorCallListener listener){
+	public static void registerCallConstructor(OnConstructorCallListener listener) {
 		constructorCallListeners.add(listener);
 	}
 
@@ -315,8 +315,13 @@ public class Utils {
 			if (field.isAnnotationPresent(Autowired.class)) {
 				field.setAccessible(true);
 				Object serviceInstance = Injector.getService(field.getType());
-				field.set(instance, serviceInstance);
+				if (field.getType() == Optional.class) {
+					field.set(instance, Optional.ofNullable(serviceInstance));
+				} else {
+					field.set(instance, serviceInstance);
+				}
 				autowire(serviceInstance);
+				field.setAccessible(false);
 			}
 		}
 	}
