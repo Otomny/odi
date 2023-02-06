@@ -6,6 +6,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -316,6 +317,10 @@ public class Utils {
 				field.setAccessible(true);
 				Object serviceInstance = Injector.getService(field.getType());
 				if (field.getType() == Optional.class) {
+					ParameterizedType type = (ParameterizedType) field.getGenericType();
+					Class<?> serviceType = (Class<?>) type.getActualTypeArguments()[0];
+					serviceInstance = Injector.getService(serviceType);
+					// serviceInstance
 					field.set(instance, Optional.ofNullable(serviceInstance));
 				} else {
 					field.set(instance, serviceInstance);
