@@ -310,6 +310,8 @@ public class Utils {
 	 * @throws IllegalAccessException
 	 */
 	public static void autowire(Object instance) throws InstantiationException, IllegalAccessException {
+		if(instance == null)
+			return;
 		Class<?> klass = instance.getClass();
 		Injector.preWireListeners.forEach(listener -> listener.wire(instance));
 		for (Field field : klass.getDeclaredFields()) {
