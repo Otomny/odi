@@ -53,7 +53,7 @@ public class Utils {
 	 */
 	public static <T> T callConstructor(Class<? extends T> instanceClass)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		return callConstructor(instanceClass, new Object[] {});
+		return callConstructor(instanceClass, false, new Object[] {});
 	}
 
 	/**
@@ -64,10 +64,13 @@ public class Utils {
 	 * @throws IllegalArgumentException
 	 * @throws InvocationTargetException
 	 */
-	public static <T> T callConstructor(Class<? extends T> instanceClass, Object... parameters)
+	public static <T> T callConstructor(Class<? extends T> instanceClass,  boolean useDefaultConstructor, Object... parameters)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		int constructorCount = instanceClass.getConstructors().length;
 		for (Constructor<?> constructor : instanceClass.getConstructors()) {
+			if(useDefaultConstructor && constructor.getParameters().length == 0){
+				return callConstructor(constructor, instanceClass, parameters);
+			}
 			// if multiple constructor, don't take the default one (The one without any parameters)
 			if (constructorCount == 1 || constructor.getParameters().length > 0) {
 				return callConstructor(constructor, instanceClass, parameters);

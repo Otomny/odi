@@ -102,7 +102,7 @@ public class Injector {
 		try {
 			if (instance.singletons.containsKey(klass))
 				return;
-			instance.singletons.put(klass, Utils.callConstructor(klass, parameters));
+			instance.singletons.put(klass, Utils.callConstructor(klass, false, parameters));
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
 		}

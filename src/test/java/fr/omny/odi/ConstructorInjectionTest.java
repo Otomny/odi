@@ -22,7 +22,7 @@ public class ConstructorInjectionTest {
 	@Test
 	public void callConstructor_Argument()
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		var service = Utils.callConstructor(DummyService1.class, "Hello world");
+		var service = Utils.callConstructor(DummyService1.class, false, "Hello world");
 		assertNotNull(service);
 		assertEquals("Hello world", service.getData());
 	}
