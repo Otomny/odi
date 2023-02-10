@@ -21,7 +21,7 @@ public class BytecodeHarvester extends ClassVisitor {
 	private Map<String, Map<String, String>> annotationsDatas = new HashMap<>();
 
 	protected BytecodeHarvester(String className) {
-		super(Opcodes.ASM8);
+		super(Opcodes.ASM9);
 		this.className = className;
 	}
 

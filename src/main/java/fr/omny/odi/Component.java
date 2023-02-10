@@ -14,4 +14,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Component {
 	
+	/**
+	 * Tell if this component require a pre-wire injection
+	 * @return
+	 */
+	boolean requireWire() default false;
+
 }

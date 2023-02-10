@@ -159,6 +159,10 @@ public class Injector {
 				if (this.singletons.containsKey(implementationClass))
 					continue;
 				Object serviceInstance = Utils.callConstructor(implementationClass);
+				Component annotationData = implementationClass.getAnnotation(Component.class);
+				if (annotationData.requireWire()) {
+					Injector.wire(serviceInstance);
+				}
 				addMethodReturns(implementationClass, serviceInstance);
 				this.singletons.put(implementationClass, serviceInstance);
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
