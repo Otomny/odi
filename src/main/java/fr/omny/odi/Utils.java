@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -64,11 +65,12 @@ public class Utils {
 	 * @throws IllegalArgumentException
 	 * @throws InvocationTargetException
 	 */
-	public static <T> T callConstructor(Class<? extends T> instanceClass,  boolean useDefaultConstructor, Object... parameters)
+	public static <T> T callConstructor(Class<? extends T> instanceClass, boolean useDefaultConstructor,
+			Object... parameters)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		int constructorCount = instanceClass.getConstructors().length;
 		for (Constructor<?> constructor : instanceClass.getConstructors()) {
-			if(useDefaultConstructor && constructor.getParameters().length == 0){
+			if (useDefaultConstructor && constructor.getParameters().length == 0) {
 				return callConstructor(constructor, instanceClass, parameters);
 			}
 			// if multiple constructor, don't take the default one (The one without any parameters)
@@ -98,9 +100,9 @@ public class Utils {
 
 		Function<Class<?>, Object> getInputParameter = klass -> {
 			for (var obj : parameters) {
-				if(usedParameters.contains(obj))
+				if (usedParameters.contains(obj))
 					continue;
-				if (klass.isAssignableFrom(obj.getClass())){
+				if (klass.isAssignableFrom(obj.getClass())) {
 					usedParameters.add(obj);
 					return obj;
 				}
@@ -321,7 +323,7 @@ public class Utils {
 	 * @throws IllegalAccessException
 	 */
 	public static void autowire(Object instance) throws InstantiationException, IllegalAccessException {
-		if(instance == null)
+		if (instance == null)
 			return;
 		Class<?> klass = instance.getClass();
 		Injector.preWireListeners.forEach(listener -> listener.wire(instance));
@@ -329,15 +331,21 @@ public class Utils {
 			if (field.isAnnotationPresent(Autowired.class)) {
 				var autowiredData = field.getAnnotation(Autowired.class);
 				field.setAccessible(true);
-				Object serviceInstance = Injector.getService(field.getType(), autowiredData.value());
+				Object serviceInstance = null;
 				if (field.getType() == Optional.class) {
 					ParameterizedType type = (ParameterizedType) field.getGenericType();
 					Class<?> serviceType = (Class<?>) type.getActualTypeArguments()[0];
-					serviceInstance = Injector.getService(serviceType);
+					serviceInstance = Injector.getService(serviceType, autowiredData.value());
 					// serviceInstance
 					field.set(instance, Optional.ofNullable(serviceInstance));
 				} else {
+					serviceInstance = Injector.getService(field.getType(), autowiredData.value());
 					field.set(instance, serviceInstance);
+				}
+				if (serviceInstance == null) {
+					Injector.getLogger().ifPresent(logger -> {
+						logger.warning("Could not find service of type " + field.getType() + " with name " + autowiredData.value());
+					});
 				}
 				autowire(serviceInstance);
 				field.setAccessible(false);

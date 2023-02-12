@@ -36,8 +36,8 @@ public class Injector {
 		try {
 			synchronized (Injector.class) {
 				if (instance == null) {
-					instance = new Injector();
 					Injector.logger = Optional.ofNullable(logger);
+					instance = new Injector();
 					instance.add(mainClass.getPackageName());
 				}
 			}
@@ -149,7 +149,7 @@ public class Injector {
 
 	public static <T> T getService(Class<T> klass) {
 		try {
-			return instance.getServiceInstance(klass);
+			return instance.getServiceInstance(klass, "default");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -214,8 +214,14 @@ public class Injector {
 				}
 				addMethodReturns(implementationClass, serviceInstance);
 				if (this.singletons.containsKey(implementationClass)) {
+					getLogger().ifPresent(logger -> {
+						logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
+					});
 					this.singletons.get(implementationClass).put(componentData.value(), serviceInstance);
 				} else {
+					getLogger().ifPresent(logger -> {
+						logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
+					});
 					Map<String, Object> maps = new HashMap<>();
 					maps.put(componentData.value(), serviceInstance);
 					this.singletons.put(implementationClass, maps);
@@ -244,8 +250,14 @@ public class Injector {
 							continue;
 						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
 						if (this.singletons.containsKey(returnType)) {
+							getLogger().ifPresent(logger -> {
+								logger.info("Registered component of type " + returnType + " with name " + componentData.value());
+							});
 							this.singletons.get(returnType).put(componentData.value(), nestedService);
 						} else {
+							getLogger().ifPresent(logger -> {
+								logger.info("Registered component of type " + returnType + " with name " + componentData.value());
+							});
 							Map<String, Object> maps = new HashMap<>();
 							maps.put(componentData.value(), nestedService);
 							this.singletons.put(returnType, maps);
@@ -256,17 +268,6 @@ public class Injector {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Retrieve the service instance
-	 * 
-	 * @param <T>
-	 * @param serviceClass
-	 * @return
-	 */
-	private <T> T getServiceInstance(Class<?> serviceClass) {
-		return getServiceInstance(serviceClass, "default");
 	}
 
 	/**
