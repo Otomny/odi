@@ -139,8 +139,8 @@ public class Injector {
 	 * @param o
 	 * @return
 	 */
-	public static Stream<Object> findEach(Predicate<Object> o) {
-		return instance.singletons.values().stream().filter(o);
+	public static Stream<Object> findEach(Predicate<Class<?>> o) {
+		return instance.singletons.values().stream().filter(obj -> o.test(obj.getClass()));
 	}
 
 	/**

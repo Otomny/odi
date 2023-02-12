@@ -94,10 +94,16 @@ public class Utils {
 		var targetParameters = constructor.getParameters();
 		Object[] finalParameters = new Object[targetParameters.length];
 
+		List<Object> usedParameters = new ArrayList<>();
+
 		Function<Class<?>, Object> getInputParameter = klass -> {
 			for (var obj : parameters) {
-				if (klass.isAssignableFrom(obj.getClass()))
+				if(usedParameters.contains(obj))
+					continue;
+				if (klass.isAssignableFrom(obj.getClass())){
+					usedParameters.add(obj);
 					return obj;
+				}
 			}
 			return null;
 		};

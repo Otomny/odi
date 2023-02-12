@@ -6,8 +6,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.UUID;
+import java.util.function.Function;
 
 import org.junit.Test;
+
+import lombok.Getter;
 
 public class ConstructorInjectionTest {
 
@@ -39,6 +43,23 @@ public class ConstructorInjectionTest {
 		Injector.wipeTest();
 	}
 
+	@Test
+	public void callConstructor_Complex()
+			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		var service = Utils.callConstructor(ComplexService.class, false, UUID.class, String.class,
+				new Function<String, Integer>() {
+					@Override
+					public Integer apply(String a) {
+						return 50;
+					}
+				});
+		assertNotNull(service);
+		assertEquals(UUID.class, service.getIdClass());
+		assertEquals(String.class, service.getDataClass());
+		assertNotNull(service.getMapping());
+		assertEquals(50, service.getMapping().apply("").intValue());
+	}
+
 	public static class DummyService1 {
 
 		private String data;
@@ -49,6 +70,21 @@ public class ConstructorInjectionTest {
 
 		public String getData() {
 			return data;
+		}
+
+	}
+
+	@Getter
+	public static class ComplexService {
+
+		private Class<?> idClass;
+		private Class<?> dataClass;
+		private Function<String, Integer> mapping;
+
+		public ComplexService(Class<?> idClass, Class<?> dataClass, Function<String, Integer> mapping) {
+			this.idClass = idClass;
+			this.dataClass = dataClass;
+			this.mapping = mapping;
 		}
 
 	}
