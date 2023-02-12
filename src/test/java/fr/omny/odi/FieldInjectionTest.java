@@ -30,7 +30,7 @@ public class FieldInjectionTest {
 	@Test
 	public void test_FieldInjection()
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		Injector.addService(DummyService.class, Utils.callConstructor(DummyService.class));
+		Injector.addService(DummyService.class, "default", Utils.callConstructor(DummyService.class));
 		var client = new DummyClient1();
 		assertNull(client.service);
 		Injector.wire(client);
@@ -50,7 +50,7 @@ public class FieldInjectionTest {
 	public void test_FieldInjection_Optional_Service()
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		var service = Utils.callConstructor(DummyService.class);
-		Injector.addService(DummyService.class, service);
+		Injector.addService(DummyService.class, "default", service);
 		var client = new DummyClient2();
 		assertNull(client.service);
 		Injector.wire(client);

@@ -35,7 +35,7 @@ public class ConstructorInjectionTest {
 	public void callConstructor_Argument_Autowiring()
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		Injector.startTest();
-		Injector.addServiceParams(DummyService1.class, "Hello");
+		Injector.addServiceParams(DummyService1.class, "default", "Hello");
 
 		var service2 = Utils.callConstructor(DummyService2.class);
 		assertEquals("Hello", service2.getData());

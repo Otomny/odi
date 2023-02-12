@@ -13,5 +13,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Autowired {
+
+	/**
+	 * Name of the required injected component
+	 * @return
+	 */
+	String value() default "default";
 	
 }

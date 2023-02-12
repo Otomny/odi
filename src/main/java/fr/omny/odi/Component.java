@@ -15,6 +15,12 @@ import java.lang.annotation.Target;
 public @interface Component {
 	
 	/**
+	 * Name of a component
+	 * @return
+	 */
+	String name() default "default";
+
+	/**
 	 * Tell if this component require a pre-wire injection
 	 * @return
 	 */

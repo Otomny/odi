@@ -87,9 +87,22 @@ public class Injector {
 	 * @param object
 	 */
 	public static void addService(Class<?> klass, Object object) {
-		if (instance.singletons.containsKey(klass))
-			return;
-		instance.singletons.put(klass, object);
+		addService(klass, "default", object);
+	}
+
+	/**
+	 * @param klass
+	 * @param name
+	 * @param object
+	 */
+	public static void addService(Class<?> klass, String name, Object object) {
+		if (instance.singletons.containsKey(klass)) {
+			instance.singletons.get(klass).put(name, object);
+		} else {
+			Map<String, Object> maps = new HashMap<>();
+			maps.put(name, object);
+			instance.singletons.put(klass, maps);
+		}
 	}
 
 	/**
@@ -100,9 +113,35 @@ public class Injector {
 	 */
 	public static void addServiceParams(Class<?> klass, Object... parameters) {
 		try {
-			if (instance.singletons.containsKey(klass))
-				return;
-			instance.singletons.put(klass, Utils.callConstructor(klass, false, parameters));
+			var service = Utils.callConstructor(klass, false, parameters);
+			if (instance.singletons.containsKey(klass)) {
+				instance.singletons.get(klass).put("default", service);
+			} else {
+				Map<String, Object> maps = new HashMap<>();
+				maps.put("default", service);
+				instance.singletons.put(klass, maps);
+			}
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Call a service constructor with the desired parameters and add them to services
+	 * 
+	 * @param klass
+	 * @param parameters
+	 */
+	public static void addServiceParams(Class<?> klass, String name, Object... parameters) {
+		try {
+			var service = Utils.callConstructor(klass, false, parameters);
+			if (instance.singletons.containsKey(klass)) {
+				instance.singletons.get(klass).put(name, service);
+			} else {
+				Map<String, Object> maps = new HashMap<>();
+				maps.put(name, service);
+				instance.singletons.put(klass, maps);
+			}
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
@@ -111,6 +150,15 @@ public class Injector {
 	public static <T> T getService(Class<T> klass) {
 		try {
 			return instance.getServiceInstance(klass);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public static <T> T getService(Class<T> klass, String name) {
+		try {
+			return instance.getServiceInstance(klass, name);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -140,13 +188,14 @@ public class Injector {
 	 * @return
 	 */
 	public static Stream<Object> findEach(Predicate<Class<?>> o) {
-		return instance.singletons.values().stream().filter(obj -> o.test(obj.getClass()));
+		return instance.singletons.values().stream().flatMap(m -> m.values().stream())
+				.filter(obj -> o.test(obj.getClass()));
 	}
 
 	/**
 	 * All instances of a service
 	 */
-	private Map<Class<?>, Object> singletons;
+	private Map<Class<?>, Map<String, Object>> singletons;
 
 	private Injector() {
 		singletons = new HashMap<>();
@@ -159,12 +208,18 @@ public class Injector {
 				if (this.singletons.containsKey(implementationClass))
 					continue;
 				Object serviceInstance = Utils.callConstructor(implementationClass);
-				Component annotationData = implementationClass.getAnnotation(Component.class);
-				if (annotationData.requireWire()) {
+				var componentData = implementationClass.getAnnotation(Component.class);
+				if (componentData.requireWire()) {
 					Injector.wire(serviceInstance);
 				}
 				addMethodReturns(implementationClass, serviceInstance);
-				this.singletons.put(implementationClass, serviceInstance);
+				if (this.singletons.containsKey(implementationClass)) {
+					this.singletons.get(implementationClass).put(componentData.name(), serviceInstance);
+				} else {
+					Map<String, Object> maps = new HashMap<>();
+					maps.put(componentData.name(), serviceInstance);
+					this.singletons.put(implementationClass, maps);
+				}
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 					| SecurityException e) {
 				e.printStackTrace();
@@ -176,9 +231,10 @@ public class Injector {
 	 * @param implementationClass
 	 * @param serviceInstance
 	 */
-	public void addMethodReturns(Class<?> implementationClass, Object serviceInstance) {
+	public void addMethodReturns(Class<?> implementationClass, Object englobedService) {
 		for (Method method : implementationClass.getDeclaredMethods()) {
 			if (method.isAnnotationPresent(Component.class)) {
+				var componentData = method.getAnnotation(Component.class);
 				method.setAccessible(true);
 				// Inject autowired arguments
 				try {
@@ -186,8 +242,14 @@ public class Injector {
 					if (returnType != void.class) {
 						if (this.singletons.containsKey(returnType))
 							continue;
-						Object service = Utils.callMethod(method, implementationClass, serviceInstance, new Object[] {});
-						this.singletons.put(returnType, service);
+						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
+						if (this.singletons.containsKey(returnType)) {
+							this.singletons.get(returnType).put(componentData.name(), nestedService);
+						} else {
+							Map<String, Object> maps = new HashMap<>();
+							maps.put(componentData.name(), nestedService);
+							this.singletons.put(returnType, maps);
+						}
 					}
 				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 					e.printStackTrace();
@@ -203,10 +265,21 @@ public class Injector {
 	 * @param serviceClass
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	private <T> T getServiceInstance(Class<?> serviceClass) {
+		return getServiceInstance(serviceClass, "default");
+	}
+
+	/**
+	 * Retrieve the service instance
+	 * 
+	 * @param <T>
+	 * @param serviceClass
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private <T> T getServiceInstance(Class<?> serviceClass, String name) {
 		if (this.singletons.containsKey(serviceClass)) {
-			return (T) this.singletons.get(serviceClass);
+			return (T) this.singletons.get(serviceClass).get(name);
 		} else {
 			return null;
 		}

@@ -111,7 +111,8 @@ public class Utils {
 		for (int i = 0; i < finalParameters.length; i++) {
 			var targetParam = targetParameters[i];
 			if (targetParam.isAnnotationPresent(Autowired.class)) {
-				var autowireObj = Injector.getService(targetParam.getType());
+				var autowiredData = targetParam.getAnnotation(Autowired.class);
+				var autowireObj = Injector.getService(targetParam.getType(), autowiredData.value());
 				finalParameters[i] = autowireObj;
 			} else {
 				var inputObj = getInputParameter.apply(targetParam.getType());
@@ -186,7 +187,8 @@ public class Utils {
 		for (int i = 0; i < finalParameters.length; i++) {
 			var targetParam = targetParameters[i];
 			if (targetParam.isAnnotationPresent(Autowired.class)) {
-				var autowireObj = Injector.getService(targetParam.getType());
+				var autowiredData = targetParam.getAnnotation(Autowired.class);
+				var autowireObj = Injector.getService(targetParam.getType(), autowiredData.value());
 				finalParameters[i] = autowireObj;
 			} else {
 				var inputObj = getInputParameter.apply(targetParam.getType());
@@ -325,8 +327,9 @@ public class Utils {
 		Injector.preWireListeners.forEach(listener -> listener.wire(instance));
 		for (Field field : klass.getDeclaredFields()) {
 			if (field.isAnnotationPresent(Autowired.class)) {
+				var autowiredData = field.getAnnotation(Autowired.class);
 				field.setAccessible(true);
-				Object serviceInstance = Injector.getService(field.getType());
+				Object serviceInstance = Injector.getService(field.getType(), autowiredData.value());
 				if (field.getType() == Optional.class) {
 					ParameterizedType type = (ParameterizedType) field.getGenericType();
 					Class<?> serviceType = (Class<?>) type.getActualTypeArguments()[0];
