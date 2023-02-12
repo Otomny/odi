@@ -17,7 +17,7 @@ import fr.omny.odi.listener.OnPreWireListener;
 public class Injector {
 
 	private static Injector instance;
-	private static Optional<Logger> logger;
+	private static Optional<Logger> logger = Optional.empty();
 	protected static Set<OnPreWireListener> preWireListeners = new HashSet<>();
 
 	public static void registerWireListener(OnPreWireListener onWireListener) {
@@ -214,10 +214,10 @@ public class Injector {
 				}
 				addMethodReturns(implementationClass, serviceInstance);
 				if (this.singletons.containsKey(implementationClass)) {
-					this.singletons.get(implementationClass).put(componentData.name(), serviceInstance);
+					this.singletons.get(implementationClass).put(componentData.value(), serviceInstance);
 				} else {
 					Map<String, Object> maps = new HashMap<>();
-					maps.put(componentData.name(), serviceInstance);
+					maps.put(componentData.value(), serviceInstance);
 					this.singletons.put(implementationClass, maps);
 				}
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
@@ -244,10 +244,10 @@ public class Injector {
 							continue;
 						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
 						if (this.singletons.containsKey(returnType)) {
-							this.singletons.get(returnType).put(componentData.name(), nestedService);
+							this.singletons.get(returnType).put(componentData.value(), nestedService);
 						} else {
 							Map<String, Object> maps = new HashMap<>();
-							maps.put(componentData.name(), nestedService);
+							maps.put(componentData.value(), nestedService);
 							this.singletons.put(returnType, maps);
 						}
 					}
