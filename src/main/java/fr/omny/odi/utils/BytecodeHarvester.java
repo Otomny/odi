@@ -37,7 +37,7 @@ public class BytecodeHarvester extends ClassVisitor {
 		private String annotationName;
 
 		private AnnotationHarvester(String annotationName) {
-			super(Opcodes.ASM8);
+			super(Opcodes.ASM9);
 			this.annotationName = annotationName;
 			BytecodeHarvester.this.annotationsDatas.put(annotationName, new HashMap<>());
 		}
