@@ -53,6 +53,7 @@ public class PreClass {
 
 	/**
 	 * Test if the super class of the pre state data is equal to the parameter
+	 * 
 	 * @param superClass
 	 * @return
 	 */
@@ -60,6 +61,10 @@ public class PreClass {
 		if (superClass == null)
 			return false;
 		return this.superClass.equalsIgnoreCase(superClass.getCanonicalName().replace(".", "/"));
+	}
+
+	public boolean isNotInner() {
+		return !this.className.contains("$");
 	}
 
 }
