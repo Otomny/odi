@@ -69,11 +69,17 @@ public class Utils {
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		int constructorCount = instanceClass.getConstructors().length;
 		for (Constructor<?> constructor : instanceClass.getConstructors()) {
-			if (useDefaultConstructor && constructor.getParameters().length == 0) {
-				return callConstructor(constructor, instanceClass, parameters);
-			}
-			// if multiple constructor, don't take the default one (The one without any parameters)
-			if (constructorCount == 1 || constructor.getParameters().length > 0) {
+			if (constructorCount > 1) {
+				// Multiple constructor
+				if (useDefaultConstructor && constructor.getParameterCount() == 0) {
+					// Use default one
+					return callConstructor(constructor, instanceClass, parameters);
+				} else if (constructor.getParameterCount() > 0) {
+					// Use others
+					return callConstructor(constructor, instanceClass, parameters);
+				}
+			} else {
+				// only one, take it
 				return callConstructor(constructor, instanceClass, parameters);
 			}
 		}
