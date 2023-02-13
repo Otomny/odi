@@ -117,10 +117,14 @@ public class Utils {
 
 		for (int i = 0; i < finalParameters.length; i++) {
 			var targetParam = targetParameters[i];
+			var externalObj = Utils.constructorCallListeners.stream().map(listener -> listener.value(targetParam))
+					.filter(o -> o != null).findFirst().orElse(null);
 			if (targetParam.isAnnotationPresent(Autowired.class)) {
 				var autowiredData = targetParam.getAnnotation(Autowired.class);
 				var autowireObj = Injector.getService(targetParam.getType(), autowiredData.value());
 				finalParameters[i] = autowireObj;
+			} else if (externalObj != null) {
+				finalParameters[i] = externalObj;
 			} else {
 				var inputObj = getInputParameter.apply(targetParam.getType());
 				if (inputObj != null) {
