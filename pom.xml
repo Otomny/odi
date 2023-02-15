@@ -37,22 +37,22 @@
       <version>9.4</version>
       <scope>compile</scope>
     </dependency>
-    <!-- <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm-util</artifactId>
-      <version>9.4</version>
+    <dependency>
+      <groupId>net.bytebuddy</groupId>
+      <artifactId>byte-buddy-dep</artifactId>
+      <version>1.12.23</version>
       <scope>compile</scope>
-    </dependency> -->
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
-       <executions>
-        <execution>
-          <phase>test</phase>
-        </execution>
-       </executions>
+        <executions>
+          <execution>
+            <phase>test</phase>
+          </execution>
+        </executions>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
