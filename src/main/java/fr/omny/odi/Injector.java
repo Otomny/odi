@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -12,7 +13,9 @@ import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import fr.omny.odi.caching.CacheProxyListener;
 import fr.omny.odi.listener.OnPreWireListener;
+import fr.omny.odi.proxy.ProxyFactory;
 
 public class Injector {
 
@@ -207,7 +210,9 @@ public class Injector {
 			try {
 				if (this.singletons.containsKey(implementationClass))
 					continue;
-				Object serviceInstance = Utils.callConstructor(implementationClass);
+				Object serviceInstance = ProxyFactory.newProxyInstance(implementationClass, List.of(
+					new CacheProxyListener()
+				));
 				var componentData = implementationClass.getAnnotation(Component.class);
 				if (componentData.requireWire()) {
 					Injector.wire(serviceInstance);
@@ -226,8 +231,7 @@ public class Injector {
 					maps.put(componentData.value(), serviceInstance);
 					this.singletons.put(implementationClass, maps);
 				}
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-					| SecurityException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -280,7 +284,13 @@ public class Injector {
 	@SuppressWarnings("unchecked")
 	private <T> T getServiceInstance(Class<?> serviceClass, String name) {
 		if (this.singletons.containsKey(serviceClass)) {
-			return (T) this.singletons.get(serviceClass).get(name);
+			var instance = (T) this.singletons.get(serviceClass).get(name);
+			if (instance != null)
+				return instance;
+			if (!this.singletons.get(serviceClass).isEmpty()) {
+				return (T) List.of(this.singletons.get(serviceClass).values()).get(0);
+			}
+			return null;
 		} else {
 			return null;
 		}
