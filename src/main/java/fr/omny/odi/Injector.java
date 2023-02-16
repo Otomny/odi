@@ -183,6 +183,15 @@ public class Injector {
 	}
 
 	/**
+	 * 
+	 * @param implementationClass
+	 * @throws Exception
+	 */
+	public static void addSpecial(Class<?> implementationClass) throws Exception{
+		instance.add(implementationClass);
+	}
+
+	/**
 	 * @param packageName
 	 */
 	public static void addFrom(String packageName) {
@@ -221,31 +230,35 @@ public class Injector {
 		singletons = new HashMap<>();
 	}
 
+	public void add(Class<?> implementationClass) throws Exception {
+		Object serviceInstance = ProxyFactory.newProxyInstance(implementationClass, List.of(new CacheProxyListener()));
+		var componentData = implementationClass.getAnnotation(Component.class);
+		if (componentData.requireWire()) {
+			Injector.wire(serviceInstance);
+		}
+		addMethodReturns(implementationClass, serviceInstance);
+		if (this.singletons.containsKey(implementationClass)) {
+			getLogger().ifPresent(logger -> {
+				logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
+			});
+			this.singletons.get(implementationClass).put(componentData.value(), serviceInstance);
+		} else {
+			getLogger().ifPresent(logger -> {
+				logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
+			});
+			Map<String, Object> maps = new HashMap<>();
+			maps.put(componentData.value(), serviceInstance);
+			this.singletons.put(implementationClass, maps);
+		}
+	}
+
 	public void add(String packageName) {
 		var classes = Utils.getClasses(packageName, klass -> klass.isAnnotationPresent(Component.class));
 		for (Class<?> implementationClass : classes) {
 			try {
 				if (this.singletons.containsKey(implementationClass))
 					continue;
-				Object serviceInstance = ProxyFactory.newProxyInstance(implementationClass, List.of(new CacheProxyListener()));
-				var componentData = implementationClass.getAnnotation(Component.class);
-				if (componentData.requireWire()) {
-					Injector.wire(serviceInstance);
-				}
-				addMethodReturns(implementationClass, serviceInstance);
-				if (this.singletons.containsKey(implementationClass)) {
-					getLogger().ifPresent(logger -> {
-						logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
-					});
-					this.singletons.get(implementationClass).put(componentData.value(), serviceInstance);
-				} else {
-					getLogger().ifPresent(logger -> {
-						logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
-					});
-					Map<String, Object> maps = new HashMap<>();
-					maps.put(componentData.value(), serviceInstance);
-					this.singletons.put(implementationClass, maps);
-				}
+				add(implementationClass);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
