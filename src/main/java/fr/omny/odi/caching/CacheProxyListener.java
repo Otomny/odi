@@ -22,6 +22,7 @@ public class CacheProxyListener implements OnProxyCallListener {
 		var cachingSettings = method.getAnnotation(Caching.class);
 		try {
 			this.cachingImpl = Utils.callConstructor(cachingSettings.implementation());
+			this.cachingImpl.applySettings(method.getDeclaringClass(), method, cachingSettings);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}

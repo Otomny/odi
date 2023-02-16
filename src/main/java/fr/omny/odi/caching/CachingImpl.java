@@ -1,9 +1,19 @@
 package fr.omny.odi.caching;
 
 
+import java.lang.reflect.Method;
+
 import lombok.NonNull;
 
 public interface CachingImpl {
+
+	/**
+	 * Create cache instance
+	 * @param forClass
+	 * @param forMethod
+	 * @param cacheSettings
+	 */
+	void applySettings(Class<?> forClass, Method forMethod, Caching cacheSettings);
 
 	/**
 	 * If a key is present in the cache

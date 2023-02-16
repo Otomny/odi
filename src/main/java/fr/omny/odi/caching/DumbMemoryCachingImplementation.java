@@ -1,6 +1,7 @@
 package fr.omny.odi.caching;
 
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +10,12 @@ import lombok.NonNull;
 public class DumbMemoryCachingImplementation implements CachingImpl {
 
 	private Map<Integer, Object> cache = new HashMap<>();
+
+	@Override
+	public void applySettings(Class<?> forClass, Method forMethod, Caching cacheSettings) {
+		
+	}
+
 
 	@Override
 	public boolean contains(int arrayHashCode) {
@@ -25,4 +32,5 @@ public class DumbMemoryCachingImplementation implements CachingImpl {
 		cache.put(arrayHashCode, result);
 	}
 
+	
 }
