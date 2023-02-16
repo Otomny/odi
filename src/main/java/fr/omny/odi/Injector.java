@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -14,6 +15,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import fr.omny.odi.caching.CacheProxyListener;
+import fr.omny.odi.listener.OnMethodComponentCallListener;
 import fr.omny.odi.listener.OnPreWireListener;
 import fr.omny.odi.proxy.ProxyFactory;
 
@@ -22,9 +24,14 @@ public class Injector {
 	private static Injector instance;
 	private static Optional<Logger> logger = Optional.empty();
 	protected static Set<OnPreWireListener> preWireListeners = new HashSet<>();
+	protected static Set<OnMethodComponentCallListener> methodCallListeners = new HashSet<>();
 
 	public static void registerWireListener(OnPreWireListener onWireListener) {
 		preWireListeners.add(onWireListener);
+	}
+
+	public static void registerMethodCallListener(OnMethodComponentCallListener onMethodListener) {
+		methodCallListeners.add(onMethodListener);
 	}
 
 	public static Optional<Logger> getLogger() {
@@ -191,8 +198,18 @@ public class Injector {
 	 * @return
 	 */
 	public static Stream<Object> findEach(Predicate<Class<?>> o) {
-		return instance.singletons.values().stream().flatMap(m -> m.values().stream())
-				.filter(obj -> o.test(obj.getClass()));
+		return instance.singletons.entrySet().stream().filter(e -> o.test(e.getKey()))
+				.flatMap(e -> e.getValue().values().stream());
+	}
+
+	/**
+	 * Find each component that respect specific predicate
+	 * 
+	 * @param o The predicate
+	 * @return
+	 */
+	public static Stream<Entry<Class<?>, Map<String, Object>>> findEachWithClasses(Predicate<Class<?>> o) {
+		return instance.singletons.entrySet().stream().filter(e -> o.test(e.getKey()));
 	}
 
 	/**
@@ -210,9 +227,7 @@ public class Injector {
 			try {
 				if (this.singletons.containsKey(implementationClass))
 					continue;
-				Object serviceInstance = ProxyFactory.newProxyInstance(implementationClass, List.of(
-					new CacheProxyListener()
-				));
+				Object serviceInstance = ProxyFactory.newProxyInstance(implementationClass, List.of(new CacheProxyListener()));
 				var componentData = implementationClass.getAnnotation(Component.class);
 				if (componentData.requireWire()) {
 					Injector.wire(serviceInstance);
@@ -244,6 +259,10 @@ public class Injector {
 	public void addMethodReturns(Class<?> implementationClass, Object englobedService) {
 		for (Method method : implementationClass.getDeclaredMethods()) {
 			if (method.isAnnotationPresent(Component.class)) {
+				if (methodCallListeners.stream().filter(listener -> listener.isFiltered(implementationClass, method))
+						.anyMatch(listener -> !listener.canCall(implementationClass, method))) {
+					continue;
+				}
 				var componentData = method.getAnnotation(Component.class);
 				method.setAccessible(true);
 				// Inject autowired arguments

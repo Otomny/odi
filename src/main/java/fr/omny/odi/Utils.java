@@ -173,6 +173,22 @@ public class Utils {
 	}
 
 	/**
+	 * 
+	 * @param method
+	 * @param classInstance
+	 * @param instance
+	 * @param parameters
+	 * @return
+	 */
+	public static Object callMethodQuiet(Method method, Class<?> classInstance, Object instance, Object[] parameters){
+		try {
+			return callMethod(method, classInstance, instance, parameters);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
 	 * @param method
 	 * @param classInstance
 	 * @param instance
