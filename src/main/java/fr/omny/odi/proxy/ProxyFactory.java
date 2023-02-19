@@ -1,6 +1,5 @@
 package fr.omny.odi.proxy;
 
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -36,9 +35,22 @@ public class ProxyFactory {
 					parametersType[i] = proxyMethod.getParameters()[i].getType();
 				}
 				Method remoteMethod = clazz.getDeclaredMethod(methodName, parametersType);
-				var proxyListener = listeners.stream().filter(listener -> listener.pass(remoteMethod)).findFirst().orElse(null);
-				if (proxyListener != null) {
-					return proxyListener.invoke(instance, remoteMethod, arguments);
+				var result = listeners.stream().filter(listener -> listener.pass(remoteMethod))
+						.map(proxyListener -> {
+							try {
+								return proxyListener.invoke(instance, remoteMethod, arguments);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						})
+						.filter(o -> o != null)
+						.findFirst()
+						.orElse(null);
+				if (proxyMethod.getReturnType() == void.class) {
+					return result;
+				}
+				if (result != null) {
+					return result;
 				} else {
 					return remoteMethod.invoke(instance, arguments);
 				}
