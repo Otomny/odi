@@ -1,8 +1,8 @@
 package fr.omny.odi;
 
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -85,11 +85,15 @@ public class Injector {
 
 	/**
 	 * Perform autowiring
-	 * 
+	 *
 	 * @param object
 	 */
 	public static void wire(Object object) {
-		Utils.autowireNoException(object);
+		if (Injector.instance.proxied.containsKey(object)) {
+			Utils.autowireNoException(Injector.instance.proxied.get(object));
+		} else {
+			Utils.autowireNoException(object);
+		}
 	}
 
 	/**
@@ -116,35 +120,30 @@ public class Injector {
 	}
 
 	/**
-	 * Call a service constructor with the desired parameters and add them to services
-	 * 
+	 * Call a service constructor with the desired parameters and add them to
+	 * services
+	 *
 	 * @param klass
 	 * @param parameters
 	 */
 	public static void addServiceParams(Class<?> klass, Object... parameters) {
-		try {
-			var service = Utils.callConstructor(klass, false, parameters);
-			if (instance.singletons.containsKey(klass)) {
-				instance.singletons.get(klass).put("default", service);
-			} else {
-				Map<String, Object> maps = new HashMap<>();
-				maps.put("default", service);
-				instance.singletons.put(klass, maps);
-			}
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
-		}
+		addServiceParams(klass, "default", parameters);
 	}
 
 	/**
-	 * Call a service constructor with the desired parameters and add them to services
-	 * 
+	 * Call a service constructor with the desired parameters and add them to
+	 * services
+	 *
 	 * @param klass
 	 * @param parameters
 	 */
 	public static void addServiceParams(Class<?> klass, String name, Object... parameters) {
 		try {
-			var service = Utils.callConstructor(klass, false, parameters);
+			Object service = Utils.callConstructor(klass, false, parameters);
+			Object proxyInstance = ProxyFactory.newProxyInstance(klass, service,
+					List.of(new CacheProxyListener()));
+			Injector.instance.proxied.put(proxyInstance, service);
+
 			if (instance.singletons.containsKey(klass)) {
 				instance.singletons.get(klass).put(name, service);
 			} else {
@@ -152,7 +151,7 @@ public class Injector {
 				maps.put(name, service);
 				instance.singletons.put(klass, maps);
 			}
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -183,11 +182,11 @@ public class Injector {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param implementationClass
 	 * @throws Exception
 	 */
-	public static void addSpecial(Class<?> implementationClass) throws Exception{
+	public static void addSpecial(Class<?> implementationClass) throws Exception {
 		instance.add(implementationClass);
 	}
 
@@ -202,7 +201,7 @@ public class Injector {
 
 	/**
 	 * Find each that correspond to validate the predicate
-	 * 
+	 *
 	 * @param o
 	 * @return
 	 */
@@ -213,7 +212,7 @@ public class Injector {
 
 	/**
 	 * Find each component that respect specific predicate
-	 * 
+	 *
 	 * @param o The predicate
 	 * @return
 	 */
@@ -225,36 +224,48 @@ public class Injector {
 	 * All instances of a service
 	 */
 	private Map<Class<?>, Map<String, Object>> singletons;
+	private Map<Object, Object> proxied;
 
 	private Injector() {
 		singletons = new HashMap<>();
+		proxied = new HashMap<>();
 	}
 
 	public void add(Class<?> implementationClass) throws Exception {
-		Object serviceInstance = ProxyFactory.newProxyInstance(implementationClass, List.of(new CacheProxyListener()));
+		Object originalInstance = Utils.callConstructor(implementationClass);
+		Object proxyInstance = originalInstance;
+		if (CacheProxyListener.hasCacheMethod(implementationClass)) {
+			proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance,
+					List.of(new CacheProxyListener()));
+			this.proxied.put(proxyInstance, originalInstance);
+		}
+
 		var componentData = implementationClass.getAnnotation(Component.class);
 		if (componentData.requireWire()) {
-			Injector.wire(serviceInstance);
+			Injector.wire(originalInstance);
 		}
-		addMethodReturns(implementationClass, serviceInstance);
+		addMethodReturns(implementationClass, originalInstance);
 		if (this.singletons.containsKey(implementationClass)) {
 			getLogger().ifPresent(logger -> {
 				logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
 			});
-			this.singletons.get(implementationClass).put(componentData.value(), serviceInstance);
+			this.singletons.get(implementationClass).put(componentData.value(), proxyInstance);
 		} else {
 			getLogger().ifPresent(logger -> {
 				logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
 			});
 			Map<String, Object> maps = new HashMap<>();
-			maps.put(componentData.value(), serviceInstance);
+			maps.put(componentData.value(), proxyInstance);
 			this.singletons.put(implementationClass, maps);
 		}
 	}
 
 	public void add(String packageName) {
-		var classes = Utils.getClasses(packageName, klass -> klass.isAnnotationPresent(Component.class));
+		var classes = Utils.getClasses(packageName,
+				klass -> klass.isAnnotationPresent(Component.class) && klass.isNotByteBuddy());
 		for (Class<?> implementationClass : classes) {
+			if (implementationClass.getCanonicalName().contains("$ByteBuddy"))
+				continue;
 			try {
 				if (this.singletons.containsKey(implementationClass))
 					continue;
@@ -268,8 +279,9 @@ public class Injector {
 	/**
 	 * @param implementationClass
 	 * @param serviceInstance
+	 * @throws Exception
 	 */
-	public void addMethodReturns(Class<?> implementationClass, Object englobedService) {
+	public void addMethodReturns(Class<?> implementationClass, Object englobedService) throws Exception {
 		for (Method method : implementationClass.getDeclaredMethods()) {
 			if (method.isAnnotationPresent(Component.class)) {
 				if (methodCallListeners.stream().filter(listener -> listener.isFiltered(implementationClass, method))
@@ -285,6 +297,12 @@ public class Injector {
 						if (this.singletons.containsKey(returnType))
 							continue;
 						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
+						if (!Modifier.isFinal(returnType.getModifiers())) {
+							Object proxyInstance = ProxyFactory.newProxyInstance(returnType, nestedService,
+									List.of(new CacheProxyListener()));
+							this.proxied.put(proxyInstance, nestedService);
+						}
+
 						if (this.singletons.containsKey(returnType)) {
 							getLogger().ifPresent(logger -> {
 								logger.info("Registered component of type " + returnType + " with name " + componentData.value());
@@ -308,7 +326,7 @@ public class Injector {
 
 	/**
 	 * Retrieve the service instance
-	 * 
+	 *
 	 * @param <T>
 	 * @param serviceClass
 	 * @return

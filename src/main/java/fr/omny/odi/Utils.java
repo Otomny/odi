@@ -1,6 +1,5 @@
 package fr.omny.odi;
 
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -34,6 +33,20 @@ public class Utils {
 	private static Map<String, List<String>> knownPathes = new HashMap<>();
 	private static Map<String, PreClass> knownPreclassses = new HashMap<>();
 	private static Set<OnConstructorCallListener> constructorCallListeners = new HashSet<>();
+
+	public static Method recursiveFindMethod(Class<?> klass, String methodName, Class<?>[] parametersType) {
+		try {
+			if (klass.isInterface()) {
+				return Object.class.getDeclaredMethod(methodName, parametersType);
+			}
+			return klass.getDeclaredMethod(methodName, parametersType);
+		} catch (NoSuchMethodException e) {
+			if (klass == Object.class) {
+				throw new RuntimeException(methodName + " not found even on Object.class");
+			}
+			return recursiveFindMethod(klass.getSuperclass(), methodName, parametersType);
+		}
+	}
 
 	/**
 	 * @param listener
@@ -180,7 +193,7 @@ public class Utils {
 	 * @param parameters
 	 * @return
 	 */
-	public static Object callMethodQuiet(Method method, Class<?> classInstance, Object instance, Object[] parameters){
+	public static Object callMethodQuiet(Method method, Class<?> classInstance, Object instance, Object[] parameters) {
 		try {
 			return callMethod(method, classInstance, instance, parameters);
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
@@ -264,7 +277,8 @@ public class Utils {
 	}
 
 	/**
-	 * Scan classes using ASM to read ConstantPool and other things without loading the class in the JVM (less memory
+	 * Scan classes using ASM to read ConstantPool and other things without loading
+	 * the class in the JVM (less memory
 	 * overhead)
 	 * 
 	 * @param classes
@@ -310,7 +324,8 @@ public class Utils {
 	}
 
 	/**
-	 * Forces the initialization of the class pertaining to the specified <tt>Class</tt> object. This method does nothing
+	 * Forces the initialization of the class pertaining to the specified
+	 * <tt>Class</tt> object. This method does nothing
 	 * if the class is already initialized prior to invocation.
 	 *
 	 * @param klass the class for which to force initialization
@@ -357,19 +372,22 @@ public class Utils {
 				var autowiredData = field.getAnnotation(Autowired.class);
 				field.setAccessible(true);
 				Object serviceInstance = null;
+				Class<?> fieldType = field.getType();
 				if (field.getType() == Optional.class) {
 					ParameterizedType type = (ParameterizedType) field.getGenericType();
 					Class<?> serviceType = (Class<?>) type.getActualTypeArguments()[0];
 					serviceInstance = Injector.getService(serviceType, autowiredData.value());
 					// serviceInstance
 					field.set(instance, Optional.ofNullable(serviceInstance));
+					fieldType = serviceType;
 				} else {
 					serviceInstance = Injector.getService(field.getType(), autowiredData.value());
 					field.set(instance, serviceInstance);
 				}
+				final Class<?> foundType = fieldType;
 				if (serviceInstance == null) {
 					Injector.getLogger().ifPresent(logger -> {
-						logger.warning("Could not find service of type " + field.getType() + " with name " + autowiredData.value());
+						logger.warning("Could not find service of type " + foundType + " with name " + autowiredData.value());
 					});
 				}
 				autowire(serviceInstance);

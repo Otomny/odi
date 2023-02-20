@@ -22,8 +22,19 @@ public class ProxyFactory {
 	 * @throws Exception
 	 */
 	public static <T> T newProxyInstance(Class<? extends T> clazz, List<OnProxyCallListener> listeners) throws Exception {
-
 		T instance = Utils.callConstructor(clazz);
+		return newProxyInstance(clazz, instance, listeners);
+	}
+
+	/**
+	 * @param <T>
+	 * @param clazz
+	 * @param handler
+	 * @return
+	 * @throws Exception
+	 */
+	public static <T> T newProxyInstance(Class<? extends T> clazz, T instance, List<OnProxyCallListener> listeners)
+			throws Exception {
 
 		InvocationHandler handler = new InvocationHandler() {
 
@@ -34,7 +45,7 @@ public class ProxyFactory {
 				for (int i = 0; i < parametersType.length; i++) {
 					parametersType[i] = proxyMethod.getParameters()[i].getType();
 				}
-				Method remoteMethod = clazz.getDeclaredMethod(methodName, parametersType);
+				Method remoteMethod = Utils.recursiveFindMethod(clazz, methodName, parametersType);
 				var result = listeners.stream().filter(listener -> listener.pass(remoteMethod))
 						.map(proxyListener -> {
 							try {
@@ -58,7 +69,8 @@ public class ProxyFactory {
 
 		};
 
-		Class<? extends T> proxyClass = new ByteBuddy().subclass(clazz).method(ElementMatchers.any())
+		Class<? extends T> proxyClass = new ByteBuddy().subclass(clazz)
+				.method(ElementMatchers.any())
 				.intercept(InvocationHandlerAdapter.of(handler)).make().load(clazz.getClassLoader(),
 						ClassLoadingStrategy.Default.INJECTION.with(PackageDefinitionStrategy.Trivial.INSTANCE))
 				.getLoaded();

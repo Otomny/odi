@@ -1,6 +1,5 @@
 package fr.omny.odi.utils;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,14 +12,16 @@ public class PreClass {
 
 	public static final PreClass NONE = null;
 
+	private String fullPath;
 	private String packageName;
 	private String className;
 	private String superClass;
 	private Map<String, Map<String, String>> annotations = new HashMap<>();
 	private List<String> interfaces = new ArrayList<>();
 
-	public PreClass(String packageName, BytecodeHarvester harvester) {
+	public PreClass(String packageName, String fullPath, BytecodeHarvester harvester) {
 		this.packageName = packageName;
+		this.fullPath = fullPath;
 		this.className = harvester.getClassName();
 		this.interfaces = harvester.getInterfaces();
 		this.superClass = harvester.getSuperClass();
@@ -65,6 +66,10 @@ public class PreClass {
 
 	public boolean isNotInner() {
 		return !this.className.contains("$");
+	}
+
+	public boolean isNotByteBuddy() {
+		return !this.fullPath.contains("$ByteBuddy");
 	}
 
 }

@@ -1,6 +1,5 @@
 package fr.omny.odi.caching;
 
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -9,6 +8,14 @@ import fr.omny.odi.Utils;
 import fr.omny.odi.listener.OnProxyCallListener;
 
 public class CacheProxyListener implements OnProxyCallListener {
+
+	public static boolean hasCacheMethod(Class<?> klass) {
+		for (Method method : klass.getDeclaredMethods()) {
+			if (method.isAnnotationPresent(Caching.class))
+				return true;
+		}
+		return false;
+	}
 
 	private CachingImpl cachingImpl;
 
@@ -32,9 +39,9 @@ public class CacheProxyListener implements OnProxyCallListener {
 	@Override
 	public Object invoke(Object instance, Method remoteMethod, Object[] arguments) throws Exception {
 		int arrayHashCode = Arrays.hashCode(arguments);
-		if(cachingImpl.contains(arrayHashCode)){
+		if (cachingImpl.contains(arrayHashCode)) {
 			return cachingImpl.get(arrayHashCode);
-		}else{
+		} else {
 			Object result = remoteMethod.invoke(instance, arguments);
 			cachingImpl.put(arrayHashCode, result);
 			return result;
