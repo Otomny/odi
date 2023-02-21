@@ -247,12 +247,12 @@ public class Injector {
 		addMethodReturns(implementationClass, originalInstance);
 		if (this.singletons.containsKey(implementationClass)) {
 			getLogger().ifPresent(logger -> {
-				logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
+				logger.config("Registered component of type " + implementationClass + " with name " + componentData.value());
 			});
 			this.singletons.get(implementationClass).put(componentData.value(), proxyInstance);
 		} else {
 			getLogger().ifPresent(logger -> {
-				logger.info("Registered component of type " + implementationClass + " with name " + componentData.value());
+				logger.config("Registered component of type " + implementationClass + " with name " + componentData.value());
 			});
 			Map<String, Object> maps = new HashMap<>();
 			maps.put(componentData.value(), proxyInstance);
@@ -305,12 +305,12 @@ public class Injector {
 
 						if (this.singletons.containsKey(returnType)) {
 							getLogger().ifPresent(logger -> {
-								logger.info("Registered component of type " + returnType + " with name " + componentData.value());
+								logger.config("Registered component of type " + returnType + " with name " + componentData.value());
 							});
 							this.singletons.get(returnType).put(componentData.value(), nestedService);
 						} else {
 							getLogger().ifPresent(logger -> {
-								logger.info("Registered component of type " + returnType + " with name " + componentData.value());
+								logger.config("Registered component of type " + returnType + " with name " + componentData.value());
 							});
 							Map<String, Object> maps = new HashMap<>();
 							maps.put(componentData.value(), nestedService);

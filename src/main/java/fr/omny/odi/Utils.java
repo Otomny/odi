@@ -49,6 +49,29 @@ public class Utils {
 	}
 
 	/**
+	 * 
+	 * @param klass
+	 * @param parametersType
+	 * @return
+	 */
+	public static Method findBySignature(Class<?> klass, Class<?> returnType, Class<?>[] parametersType) {
+		MethodLoop: for (Method method : klass.getDeclaredMethods()) {
+			if (method.getReturnType() != returnType)
+				continue;
+			if (method.getParameterCount() != parametersType.length)
+				continue;
+			for (int i = 0; i < parametersType.length; i++) {
+				Class<?> parameterType = parametersType[i];
+				Class<?> methodParameterType = method.getParameterTypes()[i];
+				if (parameterType != methodParameterType)
+					continue MethodLoop;
+			}
+			return method;
+		}
+		return null;
+	}
+
+	/**
 	 * @param listener
 	 */
 	public static void registerCallConstructor(OnConstructorCallListener listener) {
