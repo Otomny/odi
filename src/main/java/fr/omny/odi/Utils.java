@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ public class Utils {
 
 	/**
 	 * Recursively find a method
+	 * 
 	 * @param klass
 	 * @param methodName
 	 * @param parametersType
@@ -57,6 +59,7 @@ public class Utils {
 
 	/**
 	 * Find a method by return type and parameters
+	 * 
 	 * @param klass
 	 * @param parametersType
 	 * @return
@@ -80,13 +83,14 @@ public class Utils {
 
 	/**
 	 * Find a method by name
+	 * 
 	 * @param klass
 	 * @param parametersType
 	 * @return
 	 */
 	public static Method findByName(Class<?> klass, String methodName) {
 		for (Method method : klass.getDeclaredMethods()) {
-			if(method.getName().equalsIgnoreCase(methodName))
+			if (method.getName().equalsIgnoreCase(methodName))
 				return method;
 		}
 		return null;
@@ -131,7 +135,7 @@ public class Utils {
 				if (useDefaultConstructor && constructor.getParameterCount() == 0) {
 					// Use default one
 					return callConstructor(constructor, instanceClass, parameters);
-				} else if (constructor.getParameterCount() > 0) {
+				} else if (!useDefaultConstructor && constructor.getParameterCount() > 0) {
 					// Use others
 					return callConstructor(constructor, instanceClass, parameters);
 				}

@@ -69,13 +69,7 @@ public class ProxyFactory {
 
 		};
 
-		Class<? extends T> proxyClass = new ByteBuddy().subclass(clazz)
-				.method(ElementMatchers.any())
-				.intercept(InvocationHandlerAdapter.of(handler)).make().load(clazz.getClassLoader(),
-						ClassLoadingStrategy.Default.INJECTION.with(PackageDefinitionStrategy.Trivial.INSTANCE))
-				.getLoaded();
-
-		return proxyClass.getConstructor().newInstance();
+		return newProxyInstance(clazz, handler);
 	}
 
 	/**
@@ -91,7 +85,7 @@ public class ProxyFactory {
 						ClassLoadingStrategy.Default.INJECTION.with(PackageDefinitionStrategy.Trivial.INSTANCE))
 				.getLoaded();
 
-		return proxyClass.getConstructor().newInstance();
+		return Utils.callConstructor(proxyClass);
 	}
 
 }

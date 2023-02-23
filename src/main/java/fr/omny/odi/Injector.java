@@ -152,7 +152,7 @@ public class Injector {
 				instance.singletons.put(klass, maps);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -160,18 +160,16 @@ public class Injector {
 		try {
 			return instance.getServiceInstance(klass, "default");
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
-		return null;
 	}
 
 	public static <T> T getService(Class<T> klass, String name) {
 		try {
 			return instance.getServiceInstance(klass, name);
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
-		return null;
 	}
 
 	/**
@@ -271,7 +269,7 @@ public class Injector {
 					continue;
 				add(implementationClass);
 			} catch (Exception e) {
-				e.printStackTrace();
+				throw new RuntimeException(e);
 			}
 		}
 	}
@@ -318,7 +316,7 @@ public class Injector {
 						}
 					}
 				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					e.printStackTrace();
+					throw new RuntimeException(e);
 				}
 			}
 		}
