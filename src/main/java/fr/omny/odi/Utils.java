@@ -34,6 +34,13 @@ public class Utils {
 	private static Map<String, PreClass> knownPreclassses = new HashMap<>();
 	private static Set<OnConstructorCallListener> constructorCallListeners = new HashSet<>();
 
+	/**
+	 * Recursively find a method
+	 * @param klass
+	 * @param methodName
+	 * @param parametersType
+	 * @return
+	 */
 	public static Method recursiveFindMethod(Class<?> klass, String methodName, Class<?>[] parametersType) {
 		try {
 			if (klass.isInterface()) {
@@ -49,7 +56,7 @@ public class Utils {
 	}
 
 	/**
-	 * 
+	 * Find a method by return type and parameters
 	 * @param klass
 	 * @param parametersType
 	 * @return
@@ -67,6 +74,20 @@ public class Utils {
 					continue MethodLoop;
 			}
 			return method;
+		}
+		return null;
+	}
+
+	/**
+	 * Find a method by name
+	 * @param klass
+	 * @param parametersType
+	 * @return
+	 */
+	public static Method findByName(Class<?> klass, String methodName) {
+		for (Method method : klass.getDeclaredMethods()) {
+			if(method.getName().equalsIgnoreCase(methodName))
+				return method;
 		}
 		return null;
 	}
