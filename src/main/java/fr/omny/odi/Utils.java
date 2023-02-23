@@ -11,7 +11,6 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -435,10 +434,12 @@ public class Utils {
 				final Class<?> foundType = fieldType;
 				if (serviceInstance == null) {
 					Injector.getLogger().ifPresent(logger -> {
-						logger.warning("Could not find service of type " + foundType + " with name " + autowiredData.value());
+						logger.warning("Could not find service of type " + foundType + " with name " + autowiredData.value()
+								+ " [on class " + klass.getSimpleName() + "]");
 					});
+				} else {
+					autowire(serviceInstance);
 				}
-				autowire(serviceInstance);
 				field.setAccessible(false);
 			}
 		}
