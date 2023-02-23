@@ -124,8 +124,8 @@ public class Utils {
 	public static <T> T callConstructor(Class<? extends T> instanceClass, boolean useDefaultConstructor,
 			Object... parameters)
 			throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		int constructorCount = instanceClass.getConstructors().length;
-		for (Constructor<?> constructor : instanceClass.getConstructors()) {
+		int constructorCount = instanceClass.getDeclaredConstructors().length;
+		for (Constructor<?> constructor : instanceClass.getDeclaredConstructors()) {
 			if (constructorCount > 1) {
 				// Multiple constructor
 				if (useDefaultConstructor && constructor.getParameterCount() == 0) {
