@@ -20,6 +20,7 @@ public class ProxyTest {
 		var service = ProxyFactory.newProxyInstance(Service.class, originalService, List.of(new CacheProxyListener()));
 		assertFalse(originalService instanceof ProxyMarker);
 		assertTrue(service instanceof ProxyMarker);
+		assertTrue(Utils.isProxy(service));
 	}
 
 	public static class Service {
