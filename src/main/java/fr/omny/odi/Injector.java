@@ -252,13 +252,11 @@ public class Injector {
 	/**
 	 * All instances of a service
 	 */
-	private Map<Class<?>, Map<String, Object>> singletons;
+	private Map<Class<?>, Map<String, Object>> singletons = new HashMap<>();
 	private Map<Class<?>, Map<String, List<Method>>> joinPoints = new HashMap<>();
-	private Map<Object, Object> proxied;
+	private Map<Object, Object> proxied = new HashMap<>();
 
 	private Injector() {
-		singletons = new HashMap<>();
-		proxied = new HashMap<>();
 	}
 
 	public void addJoinPoint(Class<?> klass, String joinPointName, Method callable) {
