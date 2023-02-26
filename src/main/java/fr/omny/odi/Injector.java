@@ -3,6 +3,7 @@ package fr.omny.odi;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -164,6 +165,33 @@ public class Injector {
 		}
 	}
 
+	public static void joinpoint(Object instance, String joinPointName) {
+		if (instance == null)
+			return;
+		if (Utils.isProxy(instance))
+			// BETTER HANDLING by returning real class behind
+			return;
+		Class<?> instanceClass = instance.getClass();
+		if (!Injector.instance.singletons.containsKey(instanceClass))
+			return;
+		if (!Injector.instance.joinPoints.containsKey(instanceClass))
+			return;
+		if (!Injector.instance.joinPoints.get(instanceClass).containsKey(joinPointName))
+			return;
+		List<Method> joinPoints = Injector.instance.joinPoints.get(instanceClass).get(joinPointName);
+		for (Method joinPoint : joinPoints) {
+			Class<?> joinPointClass = joinPoint.getDeclaringClass();
+			if (!Injector.instance.singletons.containsKey(joinPointClass))
+				continue;
+			var joinPointInstance = Injector.getService(joinPointClass);
+			try {
+				Utils.callMethod(joinPoint, joinPointClass, joinPointInstance, new Object[] { instance });
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	public static <T> T getService(Class<T> klass, String name) {
 		try {
 			return instance.getServiceInstance(klass, name);
@@ -222,11 +250,26 @@ public class Injector {
 	 * All instances of a service
 	 */
 	private Map<Class<?>, Map<String, Object>> singletons;
+	private Map<Class<?>, Map<String, List<Method>>> joinPoints = new HashMap<>();
 	private Map<Object, Object> proxied;
 
 	private Injector() {
 		singletons = new HashMap<>();
 		proxied = new HashMap<>();
+	}
+
+	public void addJoinPoint(Class<?> klass, String joinPointName, Method callable) {
+		if (this.joinPoints.containsKey(klass)) {
+			if (this.joinPoints.get(klass).containsKey(joinPointName)) {
+				this.joinPoints.get(klass).get(joinPointName).add(callable);
+			} else {
+				this.joinPoints.get(klass).put(joinPointName, new ArrayList<>());
+				addJoinPoint(klass, joinPointName, callable);
+			}
+		} else {
+			this.joinPoints.put(klass, new HashMap<>());
+			addJoinPoint(klass, joinPointName, callable);
+		}
 	}
 
 	public void add(Class<?> implementationClass) throws Exception {
@@ -318,6 +361,10 @@ public class Injector {
 				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 					throw new RuntimeException(e);
 				}
+			} else if (method.isAnnotationPresent(Joinpoint.class)) {
+				var joinpointData = method.getAnnotation(Joinpoint.class);
+				method.setAccessible(true);
+				addJoinPoint(joinpointData.on(), joinpointData.value(), method);
 			}
 		}
 	}
