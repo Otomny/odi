@@ -21,11 +21,25 @@ public class MethodJoinpointTest {
 	}
 
 	@Test
-	public void test_Joinpoint() throws Exception {
+	public void test_Joinpoint_Registered() throws Exception {
 		Injector.addSpecial(Service.class);
 		Injector.addSpecial(JoinpointListener.class);
 
 		Service instance = Injector.getService(Service.class);
+		JoinpointListener listener = Injector.getService(JoinpointListener.class);
+
+		instance.callJoinPoint();
+
+		assertNotNull(listener);
+		assertTrue(listener.joinPointCalled);
+		assertEquals(instance, listener.serviceInstance);
+	}
+
+	@Test
+	public void test_Joinpoint_NonRegistered() throws Exception {
+		Injector.addSpecial(JoinpointListener.class);
+
+		Service instance = new Service();
 		JoinpointListener listener = Injector.getService(JoinpointListener.class);
 
 		instance.callJoinPoint();

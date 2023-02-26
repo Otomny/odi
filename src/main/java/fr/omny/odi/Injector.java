@@ -166,14 +166,16 @@ public class Injector {
 	}
 
 	public static void joinpoint(Object instance, String joinPointName) {
+		joinpoint(instance, joinPointName, new Object[] {});
+	}
+
+	public static void joinpoint(Object instance, String joinPointName, Object[] parameters) {
 		if (instance == null)
 			return;
 		if (Utils.isProxy(instance))
 			// BETTER HANDLING by returning real class behind
 			return;
 		Class<?> instanceClass = instance.getClass();
-		if (!Injector.instance.singletons.containsKey(instanceClass))
-			return;
 		if (!Injector.instance.joinPoints.containsKey(instanceClass))
 			return;
 		if (!Injector.instance.joinPoints.get(instanceClass).containsKey(joinPointName))
@@ -185,7 +187,8 @@ public class Injector {
 				continue;
 			var joinPointInstance = Injector.getService(joinPointClass);
 			try {
-				Utils.callMethod(joinPoint, joinPointClass, joinPointInstance, new Object[] { instance });
+				Utils.callMethod(joinPoint, joinPointClass, joinPointInstance,
+						UnsafeUtils.concatenate(new Object[] { instance }, parameters));
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				e.printStackTrace();
 			}
