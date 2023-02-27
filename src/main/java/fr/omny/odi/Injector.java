@@ -324,7 +324,7 @@ public class Injector {
 					continue;
 				add(implementationClass);
 			} catch (Exception e) {
-				throw new RuntimeException(e);
+				throw new RuntimeException("Failed to create service for " + implementationClass, e);
 			}
 		}
 	}
