@@ -1,6 +1,5 @@
 package fr.omny.odi.proxy;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -8,6 +7,8 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 
 import fr.omny.odi.Utils;
+import fr.omny.odi.caching.CacheProxyListener;
+import fr.omny.odi.joinpoint.JoinpointCallListener;
 import fr.omny.odi.listener.OnProxyCallListener;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
@@ -19,6 +20,17 @@ import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
 
 public class ProxyFactory {
+
+	/**
+	 * @param <T>
+	 * @param clazz
+	 * @param handler
+	 * @return
+	 * @throws Exception
+	 */
+	public static <T> T newProxyInstance(Class<? extends T> clazz, T instance) throws Exception {
+		return newProxyInstance(clazz, instance, List.of(new CacheProxyListener(), new JoinpointCallListener()));
+	}
 
 	/**
 	 * @param <T>
