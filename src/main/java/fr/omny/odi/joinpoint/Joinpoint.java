@@ -1,4 +1,4 @@
-package fr.omny.odi;
+package fr.omny.odi.joinpoint;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,8 +14,14 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 public @interface Joinpoint {
 
+	/**
+	 * Name of join point, can be the method name to capture the whole thing
+	 * @return
+	 */
 	String value();
 
 	Class<?> on();
+
+	JoinpointPlace place() default JoinpointPlace.AFTER_INVOKE;
 	
 }

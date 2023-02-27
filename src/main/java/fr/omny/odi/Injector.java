@@ -16,9 +16,12 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import fr.omny.odi.caching.CacheProxyListener;
+import fr.omny.odi.joinpoint.Joinpoint;
+import fr.omny.odi.joinpoint.JoinpointCallListener;
 import fr.omny.odi.listener.OnMethodComponentCallListener;
 import fr.omny.odi.listener.OnPreWireListener;
 import fr.omny.odi.proxy.ProxyFactory;
+import fr.omny.odi.proxy.ProxyMarker;
 
 public class Injector {
 
@@ -142,7 +145,7 @@ public class Injector {
 		try {
 			Object service = Utils.callConstructor(klass, false, parameters);
 			Object proxyInstance = ProxyFactory.newProxyInstance(klass, service,
-					List.of(new CacheProxyListener()));
+					List.of(new CacheProxyListener(), new JoinpointCallListener()));
 			Injector.instance.proxied.put(proxyInstance, service);
 
 			if (instance.singletons.containsKey(klass)) {
@@ -165,6 +168,22 @@ public class Injector {
 		}
 	}
 
+	public static <T> T getOriginalService(Class<T> klass) {
+		try {
+			return instance.getOriginalServiceInstance(klass, "default");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static List<Method> getJoinpoints(Class<?> klass, String joinPointName) {
+		if (!Injector.instance.joinPoints.containsKey(klass))
+			return List.of();
+		if (!Injector.instance.joinPoints.get(klass).containsKey(joinPointName))
+			return List.of();
+		return Injector.instance.joinPoints.get(klass).get(joinPointName);
+	}
+
 	public static void joinpoint(Object instance, String joinPointName) {
 		joinpoint(instance, joinPointName, new Object[] {});
 	}
@@ -176,11 +195,7 @@ public class Injector {
 			// BETTER HANDLING by returning real class behind
 			return;
 		Class<?> instanceClass = instance.getClass();
-		if (!Injector.instance.joinPoints.containsKey(instanceClass))
-			return;
-		if (!Injector.instance.joinPoints.get(instanceClass).containsKey(joinPointName))
-			return;
-		List<Method> joinPoints = Injector.instance.joinPoints.get(instanceClass).get(joinPointName);
+		List<Method> joinPoints = getJoinpoints(instanceClass, joinPointName);
 		for (Method joinPoint : joinPoints) {
 			Class<?> joinPointClass = joinPoint.getDeclaringClass();
 			if (!Injector.instance.singletons.containsKey(joinPointClass))
@@ -275,12 +290,8 @@ public class Injector {
 
 	public void add(Class<?> implementationClass) throws Exception {
 		Object originalInstance = Utils.callConstructor(implementationClass);
-		Object proxyInstance = originalInstance;
-		if (CacheProxyListener.hasCacheMethod(implementationClass)) {
-			proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance,
-					List.of(new CacheProxyListener()));
-			this.proxied.put(proxyInstance, originalInstance);
-		}
+		Object proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance,
+				List.of(new CacheProxyListener(), new JoinpointCallListener()));
 
 		var componentData = implementationClass.getAnnotation(Component.class);
 		if (componentData.requireWire()) {
@@ -385,6 +396,36 @@ public class Injector {
 				return instance;
 			if (!this.singletons.get(serviceClass).isEmpty()) {
 				return (T) List.of(this.singletons.get(serviceClass).values()).get(0);
+			}
+			return null;
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Retrieve the service instance
+	 *
+	 * @param <T>
+	 * @param serviceClass
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private <T> T getOriginalServiceInstance(Class<?> serviceClass, String name) {
+		if (this.singletons.containsKey(serviceClass)) {
+			var instance = (T) this.singletons.get(serviceClass).get(name);
+			if (instance != null) {
+				if (instance instanceof ProxyMarker marker) {
+					return (T) marker.getOriginalInstance();
+				}
+				return instance;
+			}
+			if (!this.singletons.get(serviceClass).isEmpty()) {
+				instance = (T) List.of(this.singletons.get(serviceClass).values()).get(0);
+				if (instance instanceof ProxyMarker marker) {
+					return (T) marker.getOriginalInstance();
+				}
+				return instance;
 			}
 			return null;
 		} else {

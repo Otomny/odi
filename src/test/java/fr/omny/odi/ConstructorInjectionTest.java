@@ -63,6 +63,8 @@ public class ConstructorInjectionTest {
 
 		private String data;
 
+		DummyService1(){}
+
 		public DummyService1(String data) {
 			this.data = data;
 		}
@@ -91,6 +93,8 @@ public class ConstructorInjectionTest {
 	public static class DummyService2 {
 
 		private String data;
+
+		DummyService2(){}
 
 		public DummyService2(@Autowired DummyService1 serv) {
 			this.data = serv.getData();
