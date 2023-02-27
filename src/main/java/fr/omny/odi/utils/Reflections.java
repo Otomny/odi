@@ -1,10 +1,13 @@
 package fr.omny.odi.utils;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import org.objectweb.asm.ClassReader;
+
+import fr.omny.odi.proxy.ProxyFactory;
 
 public class Reflections {
 
@@ -74,6 +77,15 @@ public class Reflections {
 			}
 		}
 		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> T getFieldValue(String fieldName, Object instance)
+			throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+		Class<?> klass = ProxyFactory.getOriginalClass(instance);
+		Field field = klass.getDeclaredField(fieldName);
+		field.setAccessible(true);
+		return (T) field.get(instance);
 	}
 
 }
