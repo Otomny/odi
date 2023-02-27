@@ -15,9 +15,7 @@ import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import fr.omny.odi.caching.CacheProxyListener;
 import fr.omny.odi.joinpoint.Joinpoint;
-import fr.omny.odi.joinpoint.JoinpointCallListener;
 import fr.omny.odi.listener.OnMethodComponentCallListener;
 import fr.omny.odi.listener.OnPreWireListener;
 import fr.omny.odi.proxy.ProxyFactory;
@@ -144,8 +142,7 @@ public class Injector {
 	public static void addServiceParams(Class<?> klass, String name, Object... parameters) {
 		try {
 			Object service = Utils.callConstructor(klass, false, parameters);
-			Object proxyInstance = ProxyFactory.newProxyInstance(klass, service,
-					List.of(new CacheProxyListener(), new JoinpointCallListener()));
+			Object proxyInstance = ProxyFactory.newProxyInstance(klass, service);
 			Injector.instance.proxied.put(proxyInstance, service);
 
 			if (instance.singletons.containsKey(klass)) {
@@ -298,8 +295,7 @@ public class Injector {
 
 	public void add(Class<?> implementationClass) throws Exception {
 		Object originalInstance = Utils.callConstructor(implementationClass);
-		Object proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance,
-				List.of(new CacheProxyListener(), new JoinpointCallListener()));
+		Object proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance);
 
 		var componentData = implementationClass.getAnnotation(Component.class);
 		if (componentData.requireWire()) {
@@ -359,8 +355,7 @@ public class Injector {
 							continue;
 						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
 						if (!Modifier.isFinal(returnType.getModifiers())) {
-							Object proxyInstance = ProxyFactory.newProxyInstance(returnType, nestedService,
-									List.of(new CacheProxyListener()));
+							Object proxyInstance = ProxyFactory.newProxyInstance(nestedService.getClass(), nestedService);
 							this.proxied.put(proxyInstance, nestedService);
 						}
 
