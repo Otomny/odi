@@ -301,7 +301,8 @@ public class Injector {
 			Injector.wire(originalInstance);
 		}
 		Object proxyInstance = originalInstance;
-		if (componentData.proxy() && !Modifier.isFinal(implementationClass.getModifiers())) {
+		if (componentData.proxy() && !Modifier.isFinal(implementationClass.getModifiers())
+				&& !implementationClass.isInterface()) {
 			proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance);
 		}
 
@@ -359,7 +360,8 @@ public class Injector {
 							continue;
 						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
 						Object proxyInstance = nestedService;
-						if (componentData.proxy() && !Modifier.isFinal(returnType.getModifiers())) {
+						if (componentData.proxy() && !Modifier.isFinal(returnType.getModifiers())
+								&& !implementationClass.isInterface()) {
 							proxyInstance = ProxyFactory.newProxyInstance(implementationClass, nestedService);
 						}
 
