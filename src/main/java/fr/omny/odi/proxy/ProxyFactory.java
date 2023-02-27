@@ -19,13 +19,18 @@ import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.matcher.ElementMatchers;
 
+/**
+ * Class for creating proxies
+ */
 public class ProxyFactory {
 
 	/**
-	 * @param <T>
-	 * @param clazz
-	 * @param handler
-	 * @return
+	 * Create a proxy
+	 * 
+	 * @param <T>      The type of the instance
+	 * @param clazz    The class
+	 * @param instance The instance
+	 * @return The proxied object of type <T>
 	 * @throws Exception
 	 */
 	public static <T> T newProxyInstance(Class<? extends T> clazz, T instance) throws Exception {
@@ -33,10 +38,12 @@ public class ProxyFactory {
 	}
 
 	/**
-	 * @param <T>
-	 * @param clazz
-	 * @param handler
-	 * @return
+	 * Create a proxy
+	 * 
+	 * @param <T>       The type of the instance
+	 * @param clazz     The class
+	 * @param listeners Listeners on that proxy
+	 * @return The proxied object of type <T>
 	 * @throws Exception
 	 */
 	public static <T> T newProxyInstance(Class<? extends T> clazz, List<OnProxyCallListener> listeners) throws Exception {
@@ -45,10 +52,13 @@ public class ProxyFactory {
 	}
 
 	/**
-	 * @param <T>
-	 * @param clazz
-	 * @param handler
-	 * @return
+	 * Create a proxy
+	 * 
+	 * @param <T>       The type of the instance
+	 * @param clazz     The class
+	 * @param instance  The instance
+	 * @param listeners Listeners on that proxy
+	 * @return The proxied object of type <T>
 	 * @throws Exception
 	 */
 	public static <T> T newProxyInstance(Class<? extends T> clazz, T instance, List<OnProxyCallListener> listeners)
@@ -88,10 +98,14 @@ public class ProxyFactory {
 	}
 
 	/**
-	 * @param <T>
-	 * @param clazz
-	 * @param handler
-	 * @return
+	 * Create a proxy
+	 * 
+	 * @param <T>      The type of the instance
+	 * @param clazz    The class
+	 * @param instance The instance
+	 * @param handler  The {@link InvocationHandler} that listen to all method call
+	 * @return The proxied object of type <T> that implement the {@link ProxyMarker}
+	 *         interface
 	 * @throws Exception
 	 */
 	public static <T> T newProxyInstance(Class<? extends T> clazz, T originalInstance, InvocationHandler handler)
@@ -120,6 +134,13 @@ public class ProxyFactory {
 				new Object[] { clazz, originalInstance });
 	}
 
+	/**
+	 * Get the original class behind a proxy instance
+	 * 
+	 * @param proxyInstance The proxy instance
+	 * @return The original class behind the proxy, or the class of proxyInstance if
+	 *         the parameter is not assignable to {@link ProxyMarker}-
+	 */
 	public static Class<?> getOriginalClass(Object proxyInstance) {
 		if (proxyInstance instanceof ProxyMarker marker) {
 			return marker.getOriginalClass();
@@ -127,6 +148,15 @@ public class ProxyFactory {
 		return proxyInstance.getClass();
 	}
 
+	/**
+	 * Get the original instance behind a proxy instance
+	 * 
+	 * @param <T>           The type of the instance
+	 * @param proxyInstance The proxy instance
+	 * @return The original instance behind the proxy, or the class of proxyInstance
+	 *         if
+	 *         the parameter is not assignable to {@link ProxyMarker}
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T getOriginalInstance(Object proxyInstance) {
 		if (proxyInstance instanceof ProxyMarker marker) {

@@ -9,7 +9,10 @@ import org.objectweb.asm.ClassReader;
 
 import fr.omny.odi.proxy.ProxyFactory;
 
-public class Reflections {
+/**
+ * Reflections utils
+ */
+public final class Reflections {
 
 	private Reflections() {
 	}

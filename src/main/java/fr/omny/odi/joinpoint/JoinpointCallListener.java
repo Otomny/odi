@@ -12,6 +12,9 @@ import fr.omny.odi.UnsafeUtils;
 import fr.omny.odi.Utils;
 import fr.omny.odi.listener.OnProxyCallListener;
 
+/**
+ * Listen to {@link Pointcut} call
+ */
 public class JoinpointCallListener implements OnProxyCallListener {
 
 	@Override

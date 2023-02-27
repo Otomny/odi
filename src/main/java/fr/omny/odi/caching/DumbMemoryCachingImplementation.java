@@ -7,6 +7,9 @@ import java.util.Map;
 
 import lombok.NonNull;
 
+/**
+ * Worst memory caching technique
+ */
 public class DumbMemoryCachingImplementation implements CachingImpl {
 
 	private Map<Integer, Object> cache = new HashMap<>();
@@ -15,7 +18,6 @@ public class DumbMemoryCachingImplementation implements CachingImpl {
 	public void applySettings(Class<?> forClass, Method forMethod, Caching cacheSettings) {
 		
 	}
-
 
 	@Override
 	public boolean contains(int arrayHashCode) {

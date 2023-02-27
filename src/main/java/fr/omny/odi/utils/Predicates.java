@@ -2,12 +2,12 @@ package fr.omny.odi.utils;
 
 import java.util.function.Predicate;
 
-public class Predicates {
+public final class Predicates {
 	
 	private Predicates(){}
 
 	/**
-	 * 
+	 * Always true
 	 * @param <T>
 	 * @return
 	 */
@@ -16,7 +16,7 @@ public class Predicates {
 	}
 
 	/**
-	 * 
+	 * Always false
 	 * @param <T>
 	 * @return
 	 */

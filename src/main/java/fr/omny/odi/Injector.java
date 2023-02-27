@@ -91,11 +91,7 @@ public class Injector {
 	 * @param object
 	 */
 	public static void wire(Object object) {
-		if (Injector.instance.proxied.containsKey(object)) {
-			Utils.autowireNoException(Injector.instance.proxied.get(object));
-		} else {
-			Utils.autowireNoException(object);
-		}
+		Utils.autowireNoException(ProxyFactory.getOriginalInstance(object));
 	}
 
 	/**
@@ -143,10 +139,9 @@ public class Injector {
 		try {
 			Object service = Utils.callConstructor(klass, false, parameters);
 			Object proxyInstance = ProxyFactory.newProxyInstance(klass, service);
-			Injector.instance.proxied.put(proxyInstance, service);
 
 			if (instance.singletons.containsKey(klass)) {
-				instance.singletons.get(klass).put(name, service);
+				instance.singletons.get(klass).put(name, proxyInstance);
 			} else {
 				Map<String, Object> maps = new HashMap<>();
 				maps.put(name, service);
@@ -274,7 +269,6 @@ public class Injector {
 	 */
 	private Map<Class<?>, Map<String, Object>> singletons = new HashMap<>();
 	private Map<Class<?>, Map<String, List<Method>>> joinPoints = new HashMap<>();
-	private Map<Object, Object> proxied = new HashMap<>();
 
 	private Injector() {
 	}

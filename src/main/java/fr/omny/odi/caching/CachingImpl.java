@@ -1,14 +1,17 @@
 package fr.omny.odi.caching;
 
-
 import java.lang.reflect.Method;
 
 import lombok.NonNull;
 
+/**
+ * Cache implementation
+ */
 public interface CachingImpl {
 
 	/**
 	 * Create cache instance
+	 * 
 	 * @param forClass
 	 * @param forMethod
 	 * @param cacheSettings

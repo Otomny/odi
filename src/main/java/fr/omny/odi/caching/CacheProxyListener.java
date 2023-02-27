@@ -3,12 +3,23 @@ package fr.omny.odi.caching;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import fr.omny.odi.Utils;
 import fr.omny.odi.listener.OnProxyCallListener;
 
+/**
+ * Listen to intercept method that has the {@link Caching} annotation
+ */
 public class CacheProxyListener implements OnProxyCallListener {
 
+	/**
+	 * Check if a class has caching method
+	 * 
+	 * @param klass
+	 * @return
+	 */
 	public static boolean hasCacheMethod(Class<?> klass) {
 		for (Method method : klass.getDeclaredMethods()) {
 			if (method.isAnnotationPresent(Caching.class))
@@ -17,19 +28,23 @@ public class CacheProxyListener implements OnProxyCallListener {
 		return false;
 	}
 
-	private CachingImpl cachingImpl;
+	/**
+	 * Caching implementation of methods
+	 */
+	private Map<Method, CachingImpl> cachingMethodMap = new HashMap<>();
 
 	@Override
 	public boolean pass(Method method) {
 		if (!method.isAnnotationPresent(Caching.class)) {
 			return false;
 		}
-		if (cachingImpl != null)
+		if (cachingMethodMap.containsKey(method))
 			return true;
 		var cachingSettings = method.getAnnotation(Caching.class);
 		try {
-			this.cachingImpl = Utils.callConstructor(cachingSettings.implementation());
-			this.cachingImpl.applySettings(method.getDeclaringClass(), method, cachingSettings);
+			CachingImpl impl = Utils.callConstructor(cachingSettings.implementation());
+			impl.applySettings(method.getDeclaringClass(), method, cachingSettings);
+			this.cachingMethodMap.put(method, impl);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}
@@ -38,6 +53,7 @@ public class CacheProxyListener implements OnProxyCallListener {
 
 	@Override
 	public Object invoke(Object instance, Method remoteMethod, Object[] arguments) throws Exception {
+		CachingImpl cachingImpl = cachingMethodMap.get(remoteMethod);
 		int arrayHashCode = Arrays.hashCode(arguments);
 		if (cachingImpl.contains(arrayHashCode)) {
 			return cachingImpl.get(arrayHashCode);

@@ -9,6 +9,10 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD })
 public @interface Pointcut {
 
+	/**
+	 * 
+	 * @return The name of the pointcut (default = methodName)
+	 */
 	String value() default "__methodName";
 
 }
