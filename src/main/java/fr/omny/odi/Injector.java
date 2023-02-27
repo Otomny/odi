@@ -295,12 +295,16 @@ public class Injector {
 
 	public void add(Class<?> implementationClass) throws Exception {
 		Object originalInstance = Utils.callConstructor(implementationClass);
-		Object proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance);
 
 		var componentData = implementationClass.getAnnotation(Component.class);
 		if (componentData.requireWire()) {
 			Injector.wire(originalInstance);
 		}
+		Object proxyInstance = originalInstance;
+		if (componentData.proxy() && !Modifier.isFinal(implementationClass.getModifiers())) {
+			proxyInstance = ProxyFactory.newProxyInstance(implementationClass, originalInstance);
+		}
+
 		addMethodReturns(implementationClass, originalInstance);
 		if (this.singletons.containsKey(implementationClass)) {
 			getLogger().ifPresent(logger -> {
@@ -354,22 +358,22 @@ public class Injector {
 						if (this.singletons.containsKey(returnType))
 							continue;
 						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
-						if (!Modifier.isFinal(returnType.getModifiers())) {
-							Object proxyInstance = ProxyFactory.newProxyInstance(nestedService.getClass(), nestedService);
-							this.proxied.put(proxyInstance, nestedService);
+						Object proxyInstance = nestedService;
+						if (componentData.proxy() && !Modifier.isFinal(returnType.getModifiers())) {
+							proxyInstance = ProxyFactory.newProxyInstance(implementationClass, nestedService);
 						}
 
 						if (this.singletons.containsKey(returnType)) {
 							getLogger().ifPresent(logger -> {
 								logger.config("Registered component of type " + returnType + " with name " + componentData.value());
 							});
-							this.singletons.get(returnType).put(componentData.value(), nestedService);
+							this.singletons.get(returnType).put(componentData.value(), proxyInstance);
 						} else {
 							getLogger().ifPresent(logger -> {
 								logger.config("Registered component of type " + returnType + " with name " + componentData.value());
 							});
 							Map<String, Object> maps = new HashMap<>();
-							maps.put(componentData.value(), nestedService);
+							maps.put(componentData.value(), proxyInstance);
 							this.singletons.put(returnType, maps);
 						}
 					}
