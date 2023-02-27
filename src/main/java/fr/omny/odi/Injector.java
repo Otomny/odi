@@ -162,7 +162,7 @@ public class Injector {
 
 	public static <T> T getService(Class<T> klass) {
 		try {
-			return instance.getServiceInstance(klass, "default");
+			return instance.getServiceInstance(klass, "default", false);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -210,9 +210,17 @@ public class Injector {
 		}
 	}
 
+	public static <T> T getServiceRaw(Class<T> klass, String name) {
+		try {
+			return instance.getServiceInstance(klass, name, true);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public static <T> T getService(Class<T> klass, String name) {
 		try {
-			return instance.getServiceInstance(klass, name);
+			return instance.getServiceInstance(klass, name, false);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -389,12 +397,12 @@ public class Injector {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private <T> T getServiceInstance(Class<?> serviceClass, String name) {
+	private <T> T getServiceInstance(Class<?> serviceClass, String name, boolean raw) {
 		if (this.singletons.containsKey(serviceClass)) {
 			var instance = (T) this.singletons.get(serviceClass).get(name);
 			if (instance != null)
 				return instance;
-			if (!this.singletons.get(serviceClass).isEmpty()) {
+			if (!this.singletons.get(serviceClass).isEmpty() && !raw) {
 				return (T) List.of(this.singletons.get(serviceClass).values()).get(0);
 			}
 			return null;
