@@ -1,10 +1,5 @@
 package fr.omny.odi;
 
-import fr.omny.odi.listener.OnConstructorCallListener;
-import fr.omny.odi.proxy.ProxyMarker;
-import fr.omny.odi.utils.PreClass;
-import fr.omny.odi.utils.Predicates;
-import fr.omny.odi.utils.Reflections;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -28,6 +23,12 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import fr.omny.odi.listener.OnConstructorCallListener;
+import fr.omny.odi.proxy.ProxyMarker;
+import fr.omny.odi.utils.PreClass;
+import fr.omny.odi.utils.Predicates;
+import fr.omny.odi.utils.Reflections;
+
 public class Utils {
 
 	private static Map<String, List<String>> knownPathes = new HashMap<>();
@@ -49,12 +50,15 @@ public class Utils {
 
 	/**
 	 * Recursively find a method
+	 * 
+	 * @deprecated Better user {@link Utils#findMethod(Class, Predicate)}
 	 *
 	 * @param klass
 	 * @param methodName
 	 * @param parametersType
 	 * @return
 	 */
+	@Deprecated()
 	public static Method recursiveFindMethod(Class<?> klass, String methodName,
 			Class<?>[] parametersType) {
 		try {
@@ -74,11 +78,14 @@ public class Utils {
 
 	/**
 	 * Find a method by return type and parameters
+	 * 
+	 * @deprecated Better user {@link Utils#findMethod(Class, Predicate)}
 	 *
 	 * @param klass
 	 * @param parametersType
 	 * @return
 	 */
+	@Deprecated()
 	public static Method findBySignature(Class<?> klass, Class<?> returnType,
 			Class<?>[] parametersType) {
 		MethodLoop: for (Method method : klass.getDeclaredMethods()) {
@@ -100,16 +107,59 @@ public class Utils {
 	/**
 	 * Find a method by name
 	 *
+	 * @deprecated Better user {@link Utils#findMethod(Class, Predicate)}
+	 * 
 	 * @param klass
 	 * @param parametersType
 	 * @return
 	 */
+	@Deprecated()
 	public static Method findByName(Class<?> klass, String methodName) {
 		for (Method method : klass.getDeclaredMethods()) {
 			if (method.getName().equalsIgnoreCase(methodName))
 				return method;
 		}
 		return null;
+	}
+
+	/**
+	 * Recursively find a method
+	 * 
+	 * @param klass     The klass
+	 * @param predicate The predicate
+	 * @return The method or null if not found
+	 */
+	public static Method findMethod(Class<?> klass, Predicate<Method> predicate) {
+		if (klass.isInterface()) {
+			return findMethod(Object.class, predicate);
+		}
+		for (Method method : klass.getDeclaredMethods()) {
+			if (predicate.test(method))
+				return method;
+		}
+		if (klass.getSuperclass() == null)
+			return null;
+		return findMethod(klass.getSuperclass(), predicate);
+	}
+
+	/**
+	 * Recursively find a field
+	 * 
+	 * @param klass     The klass
+	 * @param predicate The predicate
+	 * @return The field or null if not found
+	 */
+	public static Field findField(Class<?> klass, Predicate<Field> predicate) {
+		if (klass.isInterface()) {
+			return findField(Object.class, predicate);
+		}
+		for (Field field : klass.getDeclaredFields()) {
+			if (predicate.test(field))
+				return field;
+		}
+		if (klass.getSuperclass() == null)
+			return null;
+		return findField(klass.getSuperclass(), predicate);
 	}
 
 	/**

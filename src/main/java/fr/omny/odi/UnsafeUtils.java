@@ -23,4 +23,16 @@ public class UnsafeUtils {
 		return c;
 	}
 
+	public static <T> boolean allEquals(T[] a, T[] b) {
+		if (a == null || b == null) {
+			return false;
+		}
+		int minLength = Math.min(a.length, b.length);
+		for (int i = 0; i < minLength; i++) {
+			if (a[i] != b[i])
+				return false;
+		}
+		return true;
+	}
+
 }

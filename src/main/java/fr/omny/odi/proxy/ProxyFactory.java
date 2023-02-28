@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.objectweb.asm.Opcodes;
 
+import fr.omny.odi.UnsafeUtils;
 import fr.omny.odi.Utils;
 import fr.omny.odi.caching.CacheProxyListener;
 import fr.omny.odi.joinpoint.JoinpointCallListener;
@@ -73,7 +74,8 @@ public class ProxyFactory {
 				for (int i = 0; i < parametersType.length; i++) {
 					parametersType[i] = proxyMethod.getParameters()[i].getType();
 				}
-				Method remoteMethod = Utils.recursiveFindMethod(clazz, methodName, parametersType);
+				Method remoteMethod = Utils.findMethod(clazz, method -> method.getName().equals(methodName)
+						&& UnsafeUtils.allEquals(method.getParameterTypes(), parametersType));
 				var result = listeners.stream().filter(listener -> listener.pass(remoteMethod))
 						.map(proxyListener -> {
 							try {
