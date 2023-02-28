@@ -28,6 +28,19 @@ public class ProxyFactory {
 	/**
 	 * Create a proxy
 	 * 
+	 * @param <T>   The type of the instance
+	 * @param clazz The class
+	 * @return The proxied object of type <T>
+	 * @throws Exception
+	 */
+	public static <T> T newProxyInstance(Class<? extends T> clazz) throws Exception {
+		T instance = Utils.callConstructor(clazz);
+		return newProxyInstance(clazz, instance, List.of(new CacheProxyListener(), new JoinpointCallListener()));
+	}
+
+	/**
+	 * Create a proxy
+	 * 
 	 * @param <T>      The type of the instance
 	 * @param clazz    The class
 	 * @param instance The instance
@@ -70,12 +83,11 @@ public class ProxyFactory {
 			@Override
 			public Object invoke(Object proxyObj, Method proxyMethod, Object[] arguments) throws Throwable {
 				String methodName = proxyMethod.getName();
-				Class<?>[] parametersType = new Class<?>[proxyMethod.getParameters().length];
-				for (int i = 0; i < parametersType.length; i++) {
-					parametersType[i] = proxyMethod.getParameters()[i].getType();
-				}
+
 				Method remoteMethod = Utils.findMethod(clazz, method -> method.getName().equals(methodName)
-						&& UnsafeUtils.allEquals(method.getParameterTypes(), parametersType));
+						&& method.getParameterCount() == proxyMethod.getParameterCount()
+						&& UnsafeUtils.allEquals(method.getParameterTypes(), proxyMethod.getParameterTypes()));
+						
 				var result = listeners.stream().filter(listener -> listener.pass(remoteMethod))
 						.map(proxyListener -> {
 							try {
