@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.Test;
 
 import fr.omny.odi.proxy.ProxyFactory;
@@ -43,6 +45,19 @@ public class ProxyTest {
 		assertEquals("Hello world space/69", service.data("space", 69));
 	}
 
+	@Test
+	public void test_Proxy_ConstructorCall() throws Exception {
+		Injector.startTest();
+		var originalService = Utils.callConstructor(Service3.class);
+		Injector.addService(Service3.class, originalService);
+		var service = Injector.getService(Service3.class);
+		assertFalse(originalService instanceof ProxyMarker);
+		assertFalse(service instanceof ProxyMarker);
+		assertFalse(Utils.isProxy(service));
+		assertEquals(1, Service3.CALL_COUNT.get());
+		Injector.wipeTest();
+	}
+
 	public static class Service {
 
 		public String data() {
@@ -63,6 +78,17 @@ public class ProxyTest {
 
 		public String data(String s, int i) {
 			return "Hello world " + s + "/" + i;
+		}
+
+	}
+
+	@Component(proxy = false)
+	public static class Service3 {
+
+		public static final AtomicInteger CALL_COUNT = new AtomicInteger(0);
+
+		public Service3() {
+			CALL_COUNT.incrementAndGet();
 		}
 
 	}

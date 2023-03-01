@@ -535,7 +535,7 @@ public class Utils {
 								" [on class " + klass.getSimpleName() + "]");
 					});
 				} else {
-					autowire(serviceInstance);
+					Injector.wire(serviceInstance);
 				}
 				field.setAccessible(false);
 			}

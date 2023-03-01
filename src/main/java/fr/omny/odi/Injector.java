@@ -99,7 +99,15 @@ public class Injector {
 	 * @param object
 	 */
 	public static void addService(Class<?> klass, Object object) {
-		addService(klass, "default", object);
+		addService(klass, object, false);
+	}
+
+	/**
+	 * @param klass
+	 * @param object
+	 */
+	public static void addService(Class<?> klass, Object object, boolean disableProxy) {
+		addService(klass, "default", object, disableProxy);
 	}
 
 	/**
@@ -108,12 +116,32 @@ public class Injector {
 	 * @param object
 	 */
 	public static void addService(Class<?> klass, String name, Object object) {
-		if (instance.singletons.containsKey(klass)) {
-			instance.singletons.get(klass).put(name, object);
-		} else {
-			Map<String, Object> maps = new HashMap<>();
-			maps.put(name, object);
-			instance.singletons.put(klass, maps);
+		addService(klass, name, object, false);
+	}
+
+	/**
+	 * @param klass
+	 * @param name
+	 * @param object
+	 * @param disableProxy
+	 */
+	public static void addService(Class<?> klass, String name, Object object, boolean disableProxy) {
+		try {
+			Object service = object;
+			Object proxyInstance = service;
+			if (!disableProxy || (klass.isAnnotationPresent(Component.class)
+					&& klass.getAnnotation(Component.class).proxy())) {
+				proxyInstance = ProxyFactory.newProxyInstance(klass, service);
+			}
+			if (instance.singletons.containsKey(klass)) {
+				instance.singletons.get(klass).put(name, proxyInstance);
+			} else {
+				Map<String, Object> maps = new HashMap<>();
+				maps.put(name, proxyInstance);
+				instance.singletons.put(klass, maps);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -138,13 +166,18 @@ public class Injector {
 	public static void addServiceParams(Class<?> klass, String name, Object... parameters) {
 		try {
 			Object service = Utils.callConstructor(klass, false, parameters);
-			Object proxyInstance = ProxyFactory.newProxyInstance(klass, service);
+			Object proxyInstance = service;
+			if (klass.isAnnotationPresent(Component.class)) {
+				if (klass.getAnnotation(Component.class).proxy()) {
+					proxyInstance = ProxyFactory.newProxyInstance(klass, service);
+				}
+			}
 
 			if (instance.singletons.containsKey(klass)) {
 				instance.singletons.get(klass).put(name, proxyInstance);
 			} else {
 				Map<String, Object> maps = new HashMap<>();
-				maps.put(name, service);
+				maps.put(name, proxyInstance);
 				instance.singletons.put(klass, maps);
 			}
 		} catch (Exception e) {
@@ -305,6 +338,9 @@ public class Injector {
 			getLogger().ifPresent(logger -> {
 				logger.config("Registered component of type " + implementationClass + " with name " + componentData.value());
 			});
+			if (this.singletons.get(implementationClass).containsKey(componentData.value())) {
+				return;
+			}
 			this.singletons.get(implementationClass).put(componentData.value(), proxyInstance);
 		} else {
 			getLogger().ifPresent(logger -> {
@@ -323,8 +359,6 @@ public class Injector {
 			if (implementationClass.getCanonicalName().contains("$ByteBuddy"))
 				continue;
 			try {
-				if (this.singletons.containsKey(implementationClass))
-					continue;
 				add(implementationClass);
 			} catch (Exception e) {
 				throw new RuntimeException("Failed to create service for " + implementationClass, e);
@@ -363,6 +397,9 @@ public class Injector {
 							getLogger().ifPresent(logger -> {
 								logger.config("Registered component of type " + returnType + " with name " + componentData.value());
 							});
+							if (this.singletons.get(implementationClass).containsKey(componentData.value())) {
+								continue;
+							}
 							this.singletons.get(returnType).put(componentData.value(), proxyInstance);
 						} else {
 							getLogger().ifPresent(logger -> {

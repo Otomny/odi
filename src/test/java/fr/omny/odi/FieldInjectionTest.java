@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import fr.omny.odi.proxy.ProxyFactory;
 import lombok.Getter;
 
 public class FieldInjectionTest {
@@ -55,7 +56,7 @@ public class FieldInjectionTest {
 		Injector.wire(client);
 		assertNotNull(client.service);
 		assertTrue(client.service.isPresent());
-		assertEquals(service, client.service.get());
+		assertEquals(service, ProxyFactory.getOriginalInstance(client.service.get()));
 	}
 
 	@Getter

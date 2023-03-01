@@ -50,6 +50,13 @@ public class MethodInjectionTest {
 
 		private String data;
 
+
+		/**
+		 * 
+		 */
+		public DummyService() {
+		}
+
 		public DummyService(String data) {
 			this.data = data;
 		}

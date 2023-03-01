@@ -87,7 +87,7 @@ public class ProxyFactory {
 				Method remoteMethod = Utils.findMethod(clazz, method -> method.getName().equals(methodName)
 						&& method.getParameterCount() == proxyMethod.getParameterCount()
 						&& UnsafeUtils.allEquals(method.getParameterTypes(), proxyMethod.getParameterTypes()));
-						
+
 				var result = listeners.stream().filter(listener -> listener.pass(remoteMethod))
 						.map(proxyListener -> {
 							try {
@@ -174,6 +174,9 @@ public class ProxyFactory {
 	@SuppressWarnings("unchecked")
 	public static <T> T getOriginalInstance(Object proxyInstance) {
 		if (proxyInstance instanceof ProxyMarker marker) {
+			if (marker.getOriginalInstance() instanceof ProxyMarker) {
+				throw new IllegalStateException("Chained proxies found");
+			}
 			return (T) marker.getOriginalInstance();
 		}
 		return (T) proxyInstance;
