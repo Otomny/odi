@@ -99,7 +99,11 @@ public class Injector {
 	 * @param object
 	 */
 	public static void addService(Class<?> klass, Object object) {
-		addService(klass, object, false);
+		if (klass.isAnnotationPresent(Component.class)) {
+			addService(klass, object, !klass.getAnnotation(Component.class).proxy());
+		} else {
+			addService(klass, object, false);
+		}
 	}
 
 	/**
@@ -129,6 +133,10 @@ public class Injector {
 		try {
 			Object service = object;
 			Object proxyInstance = service;
+			if (!klass.isAssignableFrom(object.getClass())) {
+				throw new IllegalArgumentException(
+						"Illegal registration: " + klass + " is not assignable to " + object.getClass());
+			}
 			if (!disableProxy || (klass.isAnnotationPresent(Component.class)
 					&& klass.getAnnotation(Component.class).proxy())) {
 				proxyInstance = ProxyFactory.newProxyInstance(klass, service);
@@ -167,6 +175,10 @@ public class Injector {
 		try {
 			Object service = Utils.callConstructor(klass, false, parameters);
 			Object proxyInstance = service;
+			if (!klass.isAssignableFrom(service.getClass())) {
+				throw new IllegalArgumentException(
+						"Illegal registration: " + klass + " is not assignable to " + service.getClass());
+			}
 			if (klass.isAnnotationPresent(Component.class)) {
 				if (klass.getAnnotation(Component.class).proxy()) {
 					proxyInstance = ProxyFactory.newProxyInstance(klass, service);
@@ -384,8 +396,6 @@ public class Injector {
 				try {
 					Class<?> returnType = method.getReturnType();
 					if (returnType != void.class) {
-						if (this.singletons.containsKey(returnType))
-							continue;
 						Object nestedService = Utils.callMethod(method, implementationClass, englobedService, new Object[] {});
 						Object proxyInstance = nestedService;
 						if (componentData.proxy() && !Modifier.isFinal(returnType.getModifiers())
@@ -397,7 +407,7 @@ public class Injector {
 							getLogger().ifPresent(logger -> {
 								logger.config("Registered component of type " + returnType + " with name " + componentData.value());
 							});
-							if (this.singletons.get(implementationClass).containsKey(componentData.value())) {
+							if (this.singletons.get(returnType).containsKey(componentData.value())) {
 								continue;
 							}
 							this.singletons.get(returnType).put(componentData.value(), proxyInstance);
@@ -435,7 +445,7 @@ public class Injector {
 			if (instance != null)
 				return instance;
 			if (!this.singletons.get(serviceClass).isEmpty() && !raw) {
-				return (T) List.of(this.singletons.get(serviceClass).values()).get(0);
+				return (T) new ArrayList<>(this.singletons.get(serviceClass).values()).get(0);
 			}
 			return null;
 		} else {
@@ -461,7 +471,7 @@ public class Injector {
 				return instance;
 			}
 			if (!this.singletons.get(serviceClass).isEmpty()) {
-				instance = (T) List.of(this.singletons.get(serviceClass).values()).get(0);
+				instance = (T) new ArrayList<>(this.singletons.get(serviceClass).values()).get(0);
 				if (instance instanceof ProxyMarker marker) {
 					return (T) marker.getOriginalInstance();
 				}

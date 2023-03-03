@@ -24,6 +24,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import fr.omny.odi.listener.OnConstructorCallListener;
+import fr.omny.odi.proxy.ProxyFactory;
 import fr.omny.odi.proxy.ProxyMarker;
 import fr.omny.odi.utils.PreClass;
 import fr.omny.odi.utils.Predicates;
@@ -529,36 +530,35 @@ public class Utils {
 			throws InstantiationException, IllegalAccessException {
 		if (instance == null)
 			return;
-		Class<?> klass = instance.getClass();
+		Class<?> klass = ProxyFactory.getOriginalClass(instance);
 		Injector.preWireListeners.forEach(listener -> listener.wire(instance));
 		for (Field field : Utils.findAllFields(klass)) {
 			if (field.isAnnotationPresent(Autowired.class)) {
 				var autowiredData = field.getAnnotation(Autowired.class);
 				field.setAccessible(true);
 				Object serviceInstance = null;
-				Class<?> fieldType = field.getType();
 				if (field.getType() == Optional.class) {
 					ParameterizedType type = (ParameterizedType) field.getGenericType();
 					Class<?> serviceType = (Class<?>) type.getActualTypeArguments()[0];
 					serviceInstance = Injector.getService(serviceType, autowiredData.value());
 					// serviceInstance
 					field.set(instance, Optional.ofNullable(serviceInstance));
-					fieldType = serviceType;
 				} else {
 					serviceInstance = Injector.getService(field.getType(), autowiredData.value());
-					field.set(instance, serviceInstance);
+					if (serviceInstance != null) {
+						final Class<?> originalClass = ProxyFactory.getOriginalClass(serviceInstance);
+						if (!field.getType().isAssignableFrom(originalClass)) {
+							Injector.getLogger().ifPresent(logger -> {
+								logger.warning("Tried to inject type " + originalClass + " on type " + field.getType()
+										+ " with component name " + autowiredData.value());
+							});
+						}
+						field.set(instance, serviceInstance);
+					}
 				}
-				final Class<?> foundType = fieldType;
-				if (serviceInstance == null) {
-					Injector.getLogger().ifPresent(logger -> {
-						logger.warning("Could not find service of type " + foundType +
-								" with name " + autowiredData.value() +
-								" [on class " + klass.getSimpleName() + "]");
-					});
-				} else {
+				if (serviceInstance != null) {
 					Injector.wire(serviceInstance);
 				}
-				field.setAccessible(false);
 			}
 		}
 	}
