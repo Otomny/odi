@@ -163,6 +163,27 @@ public class Utils {
 	}
 
 	/**
+	 * Recursively find all fields
+	 * 
+	 * @param klass The klass
+	 * @return All fields, or empty if interface
+	 */
+	public static List<Field> findAllFields(Class<?> klass) {
+		if (klass.isInterface()) {
+			return new ArrayList<>();
+		}
+		if (klass.getSuperclass() == null) {
+			return new ArrayList<>();
+		}
+		List<Field> fields = new ArrayList<>();
+		for (Field field : klass.getDeclaredFields()) {
+			fields.add(field);
+		}
+		fields.addAll(findAllFields(klass.getSuperclass()));
+		return fields;
+	}
+
+	/**
 	 * @param listener
 	 */
 	public static void registerCallConstructor(OnConstructorCallListener listener) {
@@ -510,7 +531,7 @@ public class Utils {
 			return;
 		Class<?> klass = instance.getClass();
 		Injector.preWireListeners.forEach(listener -> listener.wire(instance));
-		for (Field field : klass.getDeclaredFields()) {
+		for (Field field : Utils.findAllFields(klass)) {
 			if (field.isAnnotationPresent(Autowired.class)) {
 				var autowiredData = field.getAnnotation(Autowired.class);
 				field.setAccessible(true);
