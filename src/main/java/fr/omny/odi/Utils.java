@@ -151,6 +151,21 @@ public class Utils {
 	}
 
 	/**
+	 * 
+	 * @param klass
+	 * @param methodName
+	 * @param parametersType
+	 * @return
+	 */
+	public static Optional<Method> safeGetDeclaredMethod(Class<?> klass, String methodName, Class<?>[] parametersType) {
+		try {
+			return Optional.of(klass.getDeclaredMethod(methodName, parametersType));
+		} catch (NoSuchMethodException | SecurityException e) {
+			return Optional.empty();
+		}
+	}
+
+	/**
 	 * Recursively find a field
 	 * 
 	 * @param klass     The klass
