@@ -140,6 +140,13 @@ public class Utils {
 		}
 		if (klass.getSuperclass() == null)
 			return null;
+		if (klass.getInterfaces().length > 0) {
+			for (Class<?> interf : klass.getInterfaces()) {
+				Method foundMethod = findMethod(interf, predicate);
+				if (foundMethod != null)
+					return foundMethod;
+			}
+		}
 		return findMethod(klass.getSuperclass(), predicate);
 	}
 

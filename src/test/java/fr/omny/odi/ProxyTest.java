@@ -2,6 +2,7 @@ package fr.omny.odi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,6 +59,20 @@ public class ProxyTest {
 		Injector.wipeTest();
 	}
 
+	@Test
+	public void test_Proxy_RegisterAsInterface() throws Exception {
+		Injector.startTest();
+		Service4 originalService = Utils.callConstructor(Service4.class);
+		Injector.addService(IService4.class, originalService);
+		IService4 service = Injector.getService(IService4.class);
+		assertNotNull(service);
+		assertFalse(originalService instanceof ProxyMarker);
+		assertTrue(service instanceof ProxyMarker);
+		assertTrue(Utils.isProxy(service));
+		assertEquals("Hello world!", service.call());
+		Injector.wipeTest();
+	}
+
 	public static class Service {
 
 		public String data() {
@@ -89,6 +104,24 @@ public class ProxyTest {
 
 		public Service3() {
 			CALL_COUNT.incrementAndGet();
+		}
+
+	}
+
+	public static interface IService4 {
+
+		String call();
+
+	}
+
+	public static class Service4 implements IService4 {
+
+		public Service4() {
+		}
+
+		@Override
+		public String call() {
+			return "Hello world!";
 		}
 
 	}
