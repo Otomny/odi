@@ -400,7 +400,7 @@ public class Injector {
 						Object proxyInstance = nestedService;
 						if (componentData.proxy() && !Modifier.isFinal(returnType.getModifiers())
 								&& !implementationClass.isInterface()) {
-							proxyInstance = ProxyFactory.newProxyInstance(implementationClass, nestedService);
+							proxyInstance = ProxyFactory.newProxyInstance(returnType, nestedService);
 						}
 
 						if (this.singletons.containsKey(returnType)) {
