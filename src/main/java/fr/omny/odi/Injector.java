@@ -133,11 +133,12 @@ public class Injector {
 		try {
 			Object service = object;
 			Object proxyInstance = service;
+			boolean implPossible = !Modifier.isFinal(klass.getModifiers());
 			if (!klass.isAssignableFrom(object.getClass())) {
 				throw new IllegalArgumentException(
 						"Illegal registration: " + klass + " is not assignable to " + object.getClass());
 			}
-			if (!disableProxy || (klass.isAnnotationPresent(Component.class)
+			if (implPossible && !disableProxy || (klass.isAnnotationPresent(Component.class)
 					&& klass.getAnnotation(Component.class).proxy())) {
 				proxyInstance = ProxyFactory.newProxyInstance(klass, service);
 			}

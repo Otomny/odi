@@ -131,9 +131,6 @@ public class Utils {
 	 * @return The method or null if not found
 	 */
 	public static Method findMethod(Class<?> klass, Predicate<Method> predicate) {
-		if (klass.isInterface()) {
-			return findMethod(Object.class, predicate);
-		}
 		for (Method method : klass.getDeclaredMethods()) {
 			if (predicate.test(method))
 				return method;
