@@ -430,6 +430,8 @@ public class Utils {
 		if (knownPathes.containsKey(packageName)) {
 			return getClasses(knownPathes.get(packageName), filter);
 		}
+
+		var start = BigDecimal.valueOf(System.nanoTime());
 		String packageRelPath = packageName.replace('.', '/');
 		CodeSource src = Utils.class.getProtectionDomain().getCodeSource();
 		List<String> classes = new ArrayList<>();
@@ -452,7 +454,14 @@ public class Utils {
 			}
 		}
 		knownPathes.put(packageName, classes);
-		return getClasses(classes, filter);
+
+		var end = BigDecimal.valueOf(System.nanoTime());
+
+		List<Class<?>> finalClasses = getClasses(classes, filter);
+		Injector.getLogger().ifPresent(
+				log -> log.info("Analyzed " + classes.size() + " class files in " +
+						(end.subtract(start).doubleValue() / 1_000_000) + "ms"));
+		return finalClasses;
 	}
 
 	/**
@@ -474,7 +483,6 @@ public class Utils {
 			classesInPackage.computeIfAbsent(parentPackage, k -> new ArrayList<>());
 			classesInPackage.get(parentPackage).add(classPath);
 		}
-		var start = BigDecimal.valueOf(System.nanoTime());
 
 		for (String folder : classesInPackage.keySet()) {
 			for (String classPath : classesInPackage.get(folder)) {
@@ -494,12 +502,6 @@ public class Utils {
 				}
 			}
 		}
-
-		var end = BigDecimal.valueOf(System.nanoTime());
-
-		Injector.getLogger().ifPresent(
-				log -> log.info("Analyzed " + classes.size() + " class files in " +
-						(end.subtract(start).doubleValue() / 1_000_000) + "ms"));
 
 		return filteredClasses.stream()
 				.map(Utils::forceInit)
@@ -538,6 +540,11 @@ public class Utils {
 		return instance;
 	}
 
+	public static void autowire(Object instance)
+			throws InstantiationException, IllegalAccessException {
+		autowire(instance, new HashSet<>());
+	}
+
 	/**
 	 * Perform autowiring
 	 *
@@ -545,11 +552,12 @@ public class Utils {
 	 * @throws InstantiationException
 	 * @throws IllegalAccessException
 	 */
-	public static void autowire(Object instance)
+	public static void autowire(Object instanceOld, Set<Integer> wired)
 			throws InstantiationException, IllegalAccessException {
-		if (instance == null)
+		if (instanceOld == null)
 			return;
-		Class<?> klass = ProxyFactory.getOriginalClass(instance);
+		Class<?> klass = ProxyFactory.getOriginalClass(instanceOld);
+		Object instance = ProxyFactory.getOriginalInstance(instanceOld);
 		Injector.preWireListeners.forEach(listener -> listener.wire(instance));
 		for (Field field : Utils.findAllFields(klass)) {
 			if (field.isAnnotationPresent(Autowired.class)) {
@@ -565,18 +573,15 @@ public class Utils {
 				} else {
 					serviceInstance = Injector.getService(field.getType(), autowiredData.value());
 					if (serviceInstance != null) {
-						final Class<?> originalClass = ProxyFactory.getOriginalClass(serviceInstance);
-						if (!field.getType().isAssignableFrom(originalClass)) {
-							Injector.getLogger().ifPresent(logger -> {
-								logger.warning("Tried to inject type " + originalClass + " on type " + field.getType()
-										+ " with component name " + autowiredData.value());
-							});
-						}
 						field.set(instance, serviceInstance);
 					}
 				}
 				if (serviceInstance != null) {
-					Injector.wire(serviceInstance);
+					Object originalServiceInstance = ProxyFactory.getOriginalInstance(serviceInstance);
+					if (!wired.contains(originalServiceInstance.hashCode())) {
+						wired.add(originalServiceInstance.hashCode());
+						autowire(serviceInstance, wired);
+					}
 				}
 			}
 		}

@@ -31,6 +31,16 @@ public class ProxyTest {
 	}
 
 	@Test
+	public void test_Proxy_HashCode() throws Exception {
+		var originalService = Utils.callConstructor(Service.class);
+		var service = ProxyFactory.newProxyInstance(Service.class, originalService);
+		assertFalse(originalService instanceof ProxyMarker);
+		assertTrue(service instanceof ProxyMarker);
+		assertTrue(Utils.isProxy(service));
+		assertEquals(originalService.hashCode(), service.hashCode());
+	}
+
+	@Test
 	public void test_Proxy_Call() throws Exception {
 		var service = ProxyFactory.newProxyInstance(Service.class);
 		assertTrue(service instanceof ProxyMarker);
